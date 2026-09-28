@@ -222,6 +222,8 @@ export const LanguageSchema = z.enum(
     "pinyin",
     "pinyin_1k",
     "pinyin_10k",
+    "bopomofo",
+    "bopomofo_1k",
     "hausa",
     "hausa_1k",
     "bemba",
@@ -472,6 +474,8 @@ export const LanguageObjectSchema = z
     bcp47: z.string().optional(),
     preferredFont: KnownFontNameSchema.optional(),
     originalPunctuation: z.boolean().optional(),
+    // words are annotated tokens ("我們|ㄨㄛˇㄇㄣ˙"); the test types the bopomofo
+    bopomofo: z.boolean().optional(),
   })
   .strict();
 export type LanguageObject = z.infer<typeof LanguageObjectSchema>;
