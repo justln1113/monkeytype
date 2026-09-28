@@ -261,7 +261,31 @@ export function getKeypressesPerSecond(eventLog: EventLog): number[] {
   return counts;
 }
 
+/** Hanzi per minute: calculateWpm counts 5 characters as one word. */
+export function hanziPerMinute(hanzi: number, durationSeconds: number): number {
+  return calculateWpm(hanzi * 5, durationSeconds);
+}
+
+function commitsWord(event: TestEventNoMs): boolean {
+  return (
+    event.type === "input" &&
+    "commitsWord" in event.data &&
+    event.data.commitsWord === true
+  );
+}
+
 export function getBurstHistory(eventLog: EventLog): number[] {
+  if (eventLog.context.bopomofo === true) {
+    const { counts, boundaries } = countPerInterval(eventLog, commitsWord);
+    let prevBoundary = 0;
+    return counts.map((hanzi, i) => {
+      const boundary = boundaries[i] as number;
+      const intervalSeconds = (boundary - prevBoundary) / 1000;
+      prevBoundary = boundary;
+      return Math.round(hanziPerMinute(hanzi, intervalSeconds));
+    });
+  }
+
   const { counts, boundaries } = countPerInterval(
     eventLog,
     (e) => e.type === "input" && e.data.inputType === "insertText",
@@ -352,12 +376,18 @@ function getTargetWord(
   return eventLog.context.targetWords[wordIndex];
 }
 
-function computeBurst(events: TestEventNoMs[], now?: number): number {
+function computeBurst(
+  events: TestEventNoMs[],
+  now?: number,
+  bopomofo = false,
+): number {
   const inputEvents = events.filter((e) => e.type === "input");
   const input = getInputFromDom(inputEvents);
 
   let inputLength = input.length;
-  if (!input.endsWith(" ") && !input.endsWith("\n")) {
+  if (bopomofo) {
+    // each word is one hanzi, and its tone key is already part of the input
+  } else if (!input.endsWith(" ") && !input.endsWith("\n")) {
     inputLength += 1; // account for trigger char (space/newline) on word submit
   }
 
@@ -400,6 +430,7 @@ function computeBurst(events: TestEventNoMs[], now?: number): number {
   const durationSeconds = (endTime - firstKeypressTime) / 1000;
   if (durationSeconds <= 0) return Infinity;
 
+  if (bopomofo) return Math.round(hanziPerMinute(1, durationSeconds));
   return Math.round(calculateWpm(inputLength, durationSeconds));
 }
 
@@ -409,14 +440,20 @@ export function getWordBurst(
   now?: number,
 ): number {
   const events = getEventsForWord(eventLog.events, wordIndex);
-  return computeBurst(events, now);
+  return computeBurst(events, now, eventLog.context.bopomofo === true);
 }
 
 export function getWordBurstHistory(eventLog: EventLog): number[] {
   const eventsPerWord = getEventsPerWord(eventLog.events);
   const burstHistory: number[] = [];
   for (let i = 0; i < eventsPerWord.size; i++) {
-    burstHistory.push(computeBurst(eventsPerWord.get(i) ?? []));
+    burstHistory.push(
+      computeBurst(
+        eventsPerWord.get(i) ?? [],
+        undefined,
+        eventLog.context.bopomofo === true,
+      ),
+    );
   }
   return burstHistory;
 }
@@ -460,12 +497,13 @@ function inferActiveWordIndex(
   }
   if (lastWordEvents === undefined) return 0;
   const lastEvt = lastWordEvents[lastWordEvents.length - 1];
-  // committed trailing space → cursor advanced to the next word
+  // committed trailing space (or a separator-free commit, like a bopomofo
+  // tone) → cursor advanced to the next word
   if (
     lastEvt !== undefined &&
     "inputType" in lastEvt.data &&
     lastEvt.data.inputType === "insertText" &&
-    lastEvt.data.data === " "
+    (lastEvt.data.data === " " || commitsWord(lastEvt))
   ) {
     return maxWordIndex + 1;
   }
@@ -514,6 +552,28 @@ export function getChars(
   }
 
   return acc;
+}
+
+/**
+ * Bopomofo speed units: hanzi committed with their tone key, and those whose
+ * whole reading was right. A hanzi still being typed counts for neither.
+ */
+export function getHanziCounts(
+  eventLog: EventLog,
+  testMs?: number,
+): { correct: number; committed: number } {
+  const counts = { correct: 0, committed: 0 };
+  const eventsPerWord = getEventsPerWord(eventLog.events, testMs);
+  for (const [wordIndex, wordEvents] of eventsPerWord) {
+    const inputEvents = wordEvents.filter((e) => e.type === "input");
+    const last = inputEvents[inputEvents.length - 1];
+    if (last === undefined || !commitsWord(last)) continue;
+    counts.committed++;
+    if (getInputFromDom(inputEvents) === getTargetWord(eventLog, wordIndex)) {
+      counts.correct++;
+    }
+  }
+  return counts;
 }
 
 export function getInputHistory(eventLog: EventLog): string[] {
@@ -676,6 +736,13 @@ export function getWpmHistory(eventLog: EventLog): number[] {
   const boundaries = getTimerBoundaries(eventLog);
   if (boundaries.length === 0) return [];
 
+  if (eventLog.context.bopomofo === true) {
+    return boundaries.map((boundary) => {
+      const { correct } = getHanziCounts(eventLog, boundary);
+      return Math.round(hanziPerMinute(correct, boundary / 1000));
+    });
+  }
+
   const eventsPerWord = new Map<number, TestEventNoMs[]>();
   const cachedIfLast = new Map<number, number>();
   const cachedIfNotLast = new Map<number, number>();
@@ -742,6 +809,13 @@ export function getRawHistory(eventLog: EventLog): number[] {
   const { events } = eventLog;
   const boundaries = getTimerBoundaries(eventLog);
   if (boundaries.length === 0) return [];
+
+  if (eventLog.context.bopomofo === true) {
+    return boundaries.map((boundary) => {
+      const { committed } = getHanziCounts(eventLog, boundary);
+      return Math.round(hanziPerMinute(committed, boundary / 1000));
+    });
+  }
 
   const eventsPerWord = new Map<number, TestEventNoMs[]>();
   const cachedIfLast = new Map<number, number>();

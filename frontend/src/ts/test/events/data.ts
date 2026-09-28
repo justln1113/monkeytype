@@ -32,6 +32,7 @@ import {
   isResultCalculating,
 } from "../../states/test";
 import { isFunboxActiveWithProperty } from "../funbox/active";
+import { isBopomofoActive } from "../../bopomofo/mode";
 
 export function buildEventLog(): EventLog {
   const context = {
@@ -47,6 +48,7 @@ export function buildEventLog(): EventLog {
     ...(Config.funbox.length !== 0 && {
       isFunboxWithNospacePropertyActive: isFunboxActiveWithProperty("nospace"),
     }),
+    ...(isBopomofoActive() && { bopomofo: true as const }),
   };
 
   return {

@@ -115,6 +115,8 @@ import {
 import {
   getKeypressDurations,
   getChars,
+  getHanziCounts,
+  hanziPerMinute,
   getBurstHistory,
   getLastKeypressToEndMs,
   getStartToFirstKeypressMs,
@@ -765,12 +767,22 @@ function buildCompletedEvent(
     err: getErrorCountHistory(eventLog),
   };
 
+  let wpm = calculateWpm(chars.correctWord, duration);
+  let rawWpm = calculateWpm(
+    chars.allCorrect + chars.incorrect + chars.extra,
+    duration,
+  );
+  if (eventLog.context.bopomofo === true) {
+    // speed in hanzi per minute; accuracy and char stats stay per keystroke
+    const hanzi = getHanziCounts(eventLog);
+    wpm = hanziPerMinute(hanzi.correct, duration);
+    rawWpm = hanziPerMinute(hanzi.committed, duration);
+  }
+
   const currentQuote = getCurrentQuote();
   const completedEvent: Omit<CompletedEvent, "hash" | "uid"> = {
-    wpm: Numbers.roundTo2(calculateWpm(chars.correctWord, duration)),
-    rawWpm: Numbers.roundTo2(
-      calculateWpm(chars.allCorrect + chars.incorrect + chars.extra, duration),
-    ),
+    wpm: Numbers.roundTo2(wpm),
+    rawWpm: Numbers.roundTo2(rawWpm),
     charStats: [chars.correctWord, chars.incorrect, chars.extra, chars.missed],
     charTotal: chars.allCorrect + chars.incorrect + chars.extra,
     acc: Numbers.roundTo2(getAccuracy(eventLog).percentage),
