@@ -3,7 +3,7 @@ import * as ConfigSchemas from "@monkeytype/schemas/configs";
 import { roundTo1 } from "@monkeytype/util/numbers";
 import { JSXElement } from "solid-js";
 
-import { isBopomofoLanguage } from "../bopomofo/mode";
+import { quoteKeepsPunctuationToggle } from "../bopomofo/mode";
 import * as CustomThemes from "../collections/custom-themes";
 import { getDefaultConfig } from "../constants/default-config";
 import { isAuthenticated } from "../states/core";
@@ -147,10 +147,9 @@ export const configMetadata: ConfigMetadataObject = {
     changeRequiresRestart: true,
     group: "test",
     overrideValue: ({ value, currentConfig }) => {
-      // bopomofo quotes can be typed with or without their punctuation
       if (
         currentConfig.mode === "quote" &&
-        !isBopomofoLanguage(currentConfig.language)
+        !quoteKeepsPunctuationToggle(currentConfig.language)
       ) {
         return false;
       }
@@ -224,7 +223,10 @@ export const configMetadata: ConfigMetadataObject = {
     },
     group: "test",
     overrideConfig: ({ value, currentConfig }) => {
-      if (value === "quote" && isBopomofoLanguage(currentConfig.language)) {
+      if (
+        value === "quote" &&
+        quoteKeepsPunctuationToggle(currentConfig.language)
+      ) {
         return { numbers: false };
       }
       if (value === "custom" || value === "quote" || value === "zen") {
@@ -264,7 +266,10 @@ export const configMetadata: ConfigMetadataObject = {
     group: "test",
     description: "Change in which language you want to type.",
     overrideConfig: ({ value, currentConfig }) => {
-      if (currentConfig.mode === "quote" && !isBopomofoLanguage(value)) {
+      if (
+        currentConfig.mode === "quote" &&
+        !quoteKeepsPunctuationToggle(value)
+      ) {
         return { punctuation: false };
       }
       return {};

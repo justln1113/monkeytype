@@ -1,6 +1,5 @@
 // Bopomofo mode: hanzi with a vertical bopomofo column on its right.
-// Offsets were tuned per font in the design review (values in em of the
-// bopomofo glyph size).
+// Offsets are per font, in em of the bopomofo glyph size.
 .word.bopomofo {
   --bopomofo-font:
     "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
@@ -102,7 +101,6 @@
     }
   }
 
-  // punctuation typed as its own unit
   &.punctUnit letter.pglyph {
     border-bottom: none;
   }

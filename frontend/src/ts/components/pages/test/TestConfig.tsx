@@ -1,6 +1,6 @@
 import { ComponentProps, For, JSXElement, Show } from "solid-js";
 
-import { isBopomofoLanguage } from "../../../bopomofo/mode";
+import { quoteKeepsPunctuationToggle } from "../../../bopomofo/mode";
 import { configMetadata } from "../../../config/metadata";
 import { setConfig, setQuoteLengthAll } from "../../../config/setters";
 import { getConfig } from "../../../config/store";
@@ -108,7 +108,7 @@ function PuncAndNum(): JSXElement {
                   (getConfig.mode === "quote" &&
                     !(
                       configKey === "punctuation" &&
-                      isBopomofoLanguage(getConfig.language)
+                      quoteKeepsPunctuationToggle(getConfig.language)
                     ))
                 }
                 onClick={() => {

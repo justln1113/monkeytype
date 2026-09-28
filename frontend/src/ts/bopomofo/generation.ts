@@ -2,10 +2,9 @@ import {
   decodeUnit,
   encodeUnit,
   parseAnnotatedText,
+  SEP,
   type HanziUnit,
 } from "./parse";
-
-const SEP = "\u0001";
 
 export function isEncodedUnit(word: string): boolean {
   return word.includes(SEP);
@@ -27,7 +26,10 @@ export function expandQuoteText(
   text: string,
   typePunctuation: boolean,
 ): string[] {
-  return parseAnnotatedText(text, { typePunctuation }).map(encodeUnit);
+  // sentences run on: no word gaps inside a quote
+  return parseAnnotatedText(text, { typePunctuation })
+    .map((unit) => ({ ...unit, groupEnd: false }))
+    .map(encodeUnit);
 }
 
 export function isHanziUnit(word: string): boolean {

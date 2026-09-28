@@ -2,7 +2,7 @@ import { isFunboxActiveWithProperty } from "../../test/funbox/list";
 import { areCharactersVisuallyEqual, isSpace } from "../../utils/strings";
 import { Config } from "../../config/store";
 import { isBopomofoActive } from "../../bopomofo/mode";
-import { isToneMark } from "../../bopomofo/parse";
+import { isPunctTarget, isToneMark } from "../../bopomofo/parse";
 
 /**
  * What kind of commit a character triggers, or false if it does not commit.
@@ -30,8 +30,10 @@ export function getCommitCharacterType(options: {
   if (isBopomofoActive()) {
     if (isToneMark(data)) return "tone";
     // punctuation units have no tone: their single key commits them
-    const isPunctUnit = !isToneMark(targetWord.slice(-1));
-    if (isPunctUnit && (inputValue + data).length >= targetWord.length) {
+    if (
+      isPunctTarget(targetWord) &&
+      (inputValue + data).length >= targetWord.length
+    ) {
       return "tone";
     }
     return false;
@@ -46,7 +48,7 @@ export function getCommitCharacterType(options: {
   return false;
 }
 
-/** Words follow each other without a separator key. */
+/** Bopomofo shares the nospace funbox's separator-free paths. */
 export function isNoSeparatorMode(): boolean {
   return isFunboxActiveWithProperty("nospace") || isBopomofoActive();
 }

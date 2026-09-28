@@ -62,8 +62,8 @@ const SYMBOLS: Record<string, string> = {
 
 // Full-width punctuation. Three input schemes are accepted side by side;
 // they never collide because , . ; / - are bopomofo keys when unmodified.
-// Ctrl scheme and backtick prefix: Microsoft Bopomofo (verified on Windows 11,
-// where Shift+symbol yields half-width). Shift scheme: McBopomofo, chewing, macOS.
+// Ctrl scheme and backtick prefix: Microsoft Bopomofo, where Shift+symbol
+// yields half-width. Shift scheme: McBopomofo, chewing, macOS.
 const PUNCT_CTRL: Record<string, string> = {
   Comma: "，",
   Period: "。",

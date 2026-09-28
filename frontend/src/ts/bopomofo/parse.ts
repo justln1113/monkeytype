@@ -31,6 +31,14 @@ export function isToneMark(char: string): boolean {
   return toneSet.has(char);
 }
 
+/** Symbol slots in the bopomofo column: 3 for a syllable, one for a typo. */
+export const SYMBOL_SLOTS = 4;
+
+/** Punctuation units are typed as the mark itself, so they carry no tone. */
+export function isPunctTarget(target: string): boolean {
+  return !isToneMark(target.slice(-1));
+}
+
 /** "ㄨㄛˇㄇㄣ˙" → ["ㄨㄛˇ", "ㄇㄣ˙"] */
 export function splitReadings(readings: string): string[] {
   const out: string[] = [];
@@ -114,7 +122,7 @@ export function parseAnnotatedText(
 
 // The word pipeline (generator → Words) passes words around as space-free
 // strings, so units are encoded with control-character separators.
-const SEP = "\u0001";
+export const SEP = "\u0001";
 // control characters only: the generator lowercases words
 const HANZI_TAG = "\u0002";
 const PUNCT_TAG = "\u0003";

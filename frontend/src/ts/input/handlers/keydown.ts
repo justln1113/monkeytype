@@ -124,7 +124,6 @@ let lastImeNotice = 0;
 /**
  * Bopomofo mode maps physical keys itself. Runs synchronously so
  * preventDefault lands before the browser inserts anything.
- * @returns whether the key was handled
  */
 function handleBopomofoKeydown(event: KeyboardEvent, now: number): boolean {
   if (event.key === "Backspace") {

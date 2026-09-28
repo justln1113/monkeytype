@@ -32,7 +32,7 @@ describe("createKeyReader", () => {
   });
 
   it.each([
-    // Ctrl scheme (Microsoft Bopomofo, verified on Windows)
+    // Ctrl scheme (Microsoft Bopomofo)
     ["Comma", { ctrl: true }, "，"],
     ["Period", { ctrl: true }, "。"],
     ["Quote", { ctrl: true }, "、"],

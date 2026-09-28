@@ -47,6 +47,11 @@ describe("isBopomofoInputBlocked", () => {
     expect(blocked("ˊ", "ㄇㄟㄢㄤ", "ㄇㄟˊ")).toBe(false);
   });
 
+  it("takes nothing after a tone that did not commit (stop on error)", () => {
+    expect(blocked("ㄚ", "ㄇㄟˇ", "ㄇㄟˊ")).toBe(true);
+    expect(blocked("ˊ", "ㄇㄟˇ", "ㄇㄟˊ")).toBe(true);
+  });
+
   it("lets a punctuation unit take its key on empty input", () => {
     expect(blocked("，", "", "，")).toBe(false);
   });

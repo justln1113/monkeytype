@@ -1,14 +1,12 @@
 import { isSpace } from "../utils/strings";
 import type { KeyLike, KeyResult } from "./keymap";
-import { isToneMark } from "./parse";
-
-/** A syllable has at most 3 symbols; one extra slot shows a typo. */
-const MAX_TYPED_SYMBOLS = 4;
+import { isPunctTarget, isToneMark, SYMBOL_SLOTS } from "./parse";
 
 /**
  * Input the bopomofo mode refuses outright, before it counts as a keystroke:
- * real spaces (tone 1 is typed as ˉ), a tone with no symbol before it, and
- * symbols past the column's last slot.
+ * real spaces (tone 1 is typed as ˉ), a tone with no symbol before it,
+ * symbols past the column's last slot, and anything after a tone that did not
+ * commit (stop on error keeps a wrong tone until it is deleted).
  */
 export function isBopomofoInputBlocked(options: {
   data: string;
@@ -17,10 +15,10 @@ export function isBopomofoInputBlocked(options: {
 }): boolean {
   const { data, inputValue, targetWord } = options;
   if (isSpace(data)) return true;
-  const isPunctUnit = !isToneMark(targetWord.slice(-1));
-  if (isPunctUnit) return false;
+  if (isPunctTarget(targetWord)) return false;
+  if ([...inputValue].some(isToneMark)) return true;
   if (isToneMark(data)) return inputValue === "";
-  return [...inputValue].length >= MAX_TYPED_SYMBOLS;
+  return [...inputValue].length >= SYMBOL_SLOTS;
 }
 
 export type BopomofoKeyAction =

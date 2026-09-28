@@ -721,7 +721,7 @@ export async function generateWords(
       }
     } else if (
       generatedCount(ret.words.length) >= limit ||
-      // safety net: punctuation units never outnumber hanzi this much
+      // stop at 4× the hanzi limit in units: punctuation units add no hanzi
       (isBopomofoActive() && ret.words.length >= limit * 4)
     ) {
       stop = true;

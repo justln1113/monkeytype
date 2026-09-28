@@ -17,7 +17,6 @@ const hanziFormat = new Formatting({
   },
 });
 
-/** The formatter for speeds of the current test. */
 export function getSpeedFormat(): Formatting {
   return isBopomofoActive() ? hanziFormat : Format;
 }

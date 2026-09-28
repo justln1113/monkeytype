@@ -222,8 +222,6 @@ export const LanguageSchema = z.enum(
     "pinyin",
     "pinyin_1k",
     "pinyin_10k",
-    "bopomofo",
-    "bopomofo_1k",
     "hausa",
     "hausa_1k",
     "bemba",
@@ -452,6 +450,9 @@ export const LanguageSchema = z.enum(
     "code_6502_assembly",
     "english_legal",
     "sindhi",
+    "bopomofo",
+    "bopomofo_1k",
+    "bopomofo_5k",
   ],
   {
     errorMap: customEnumErrorHandler("Must be a supported language"),

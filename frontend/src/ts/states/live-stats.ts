@@ -2,6 +2,7 @@ import { createMemo } from "solid-js";
 
 import { getConfig } from "../config/store";
 import { getSpeedFormat } from "../bopomofo/format";
+import { isBopomofoLanguage } from "../bopomofo/mode";
 import * as CustomText from "../test/custom-text";
 import * as TestWords from "../test/test-words";
 import { secondsToString } from "../utils/date-and-time";
@@ -40,6 +41,13 @@ function getCurrentWordCount(): number {
     const sectionIndex =
       TestWords.words.get(getActiveWordIndex())?.sectionIndex;
     return sectionIndex === undefined ? 0 : sectionIndex - 1;
+  }
+  if (getConfig.mode === "words" && isBopomofoLanguage(getConfig.language)) {
+    // punctuation units don't count toward the hanzi limit
+    return TestWords.words
+      .get()
+      .slice(0, getActiveWordIndex())
+      .filter((word) => word.bopomofo?.kind === "hanzi").length;
   }
   return getActiveWordIndex();
 }

@@ -1,8 +1,5 @@
-import { isToneMark, type BopomofoUnit } from "./parse";
+import { isToneMark, SYMBOL_SLOTS, type BopomofoUnit } from "./parse";
 import { TONE1 } from "./keymap";
-
-/** Symbol slots in the bopomofo column; more typed symbols are blocked. */
-export const MAX_SYMBOLS = 4;
 
 type RenderOptions = {
   /** show what was typed instead of the target for wrong symbols */
@@ -45,10 +42,10 @@ export function renderBopomofoWord(
   const committed = typedTone !== undefined;
 
   const slots = Math.min(
-    MAX_SYMBOLS,
+    SYMBOL_SLOTS,
     Math.max(targetSymbols.length, typed.length, 1),
   );
-  const firstRow = 3 + (MAX_SYMBOLS - slots);
+  const firstRow = 3 + (SYMBOL_SLOTS - slots);
   const lastRow = firstRow + 2 * (slots - 1);
 
   let letters = "";
@@ -103,7 +100,6 @@ export function renderBopomofoWord(
   return `${before}<span class="hanzi">${escape(unit.hanzi)}</span><span class="bpmf">${letters}</span>${after}`;
 }
 
-/** Classes for the `.word` element itself. */
 export function bopomofoWordClasses(unit: BopomofoUnit): string {
   return `bopomofo${unit.kind === "punct" ? " punctUnit" : ""}${unit.groupEnd ? " groupEnd" : ""}`;
 }

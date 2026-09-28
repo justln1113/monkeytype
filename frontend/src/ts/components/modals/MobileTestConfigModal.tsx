@@ -6,7 +6,7 @@ import type { Mode } from "@monkeytype/schemas/shared";
 
 import { For, JSXElement, Show } from "solid-js";
 
-import { isBopomofoLanguage } from "../../bopomofo/mode";
+import { quoteKeepsPunctuationToggle } from "../../bopomofo/mode";
 import { setConfig, setQuoteLengthAll } from "../../config/setters";
 import { getConfig } from "../../config/store";
 import { restartTestEvent } from "../../events/test";
@@ -55,10 +55,12 @@ function MCButton(props: {
 const isPunctuationDisabled = () =>
   getConfig.mode === "quote" || getConfig.mode === "zen";
 
-// bopomofo quotes keep their punctuation toggle
-const isBopomofoPunctuationDisabled = () =>
+const isPunctuationToggleDisabled = () =>
   isPunctuationDisabled() &&
-  !(getConfig.mode === "quote" && isBopomofoLanguage(getConfig.language));
+  !(
+    getConfig.mode === "quote" &&
+    quoteKeepsPunctuationToggle(getConfig.language)
+  );
 
 export function MobileTestConfigModal(): JSXElement {
   const handleModeClick = (mode: Mode) => {
@@ -126,8 +128,8 @@ export function MobileTestConfigModal(): JSXElement {
       <div class="grid gap-2">
         <MCButton
           text="punctuation"
-          active={getConfig.punctuation && !isBopomofoPunctuationDisabled()}
-          disabled={isBopomofoPunctuationDisabled()}
+          active={getConfig.punctuation && !isPunctuationToggleDisabled()}
+          disabled={isPunctuationToggleDisabled()}
           onClick={() => {
             setConfig("punctuation", !getConfig.punctuation);
             restartTestEvent.dispatch();
