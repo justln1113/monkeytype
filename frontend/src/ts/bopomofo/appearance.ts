@@ -3,7 +3,7 @@ import { configEvent } from "../events/config";
 import { qs } from "../utils/dom";
 
 const FONTS_URL =
-  "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400&family=Noto+Serif+TC:wght@400&display=swap";
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400&family=Noto+Serif+TC:wght@400;600&display=swap";
 let fontsRequested = false;
 
 /** CJK fonts are large; only fetch them once bopomofo mode is used. */

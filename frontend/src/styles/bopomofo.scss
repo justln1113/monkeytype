@@ -10,6 +10,9 @@
   --bopomofo-dot-dx: 0.25em;
   --bopomofo-dot-dy: 0.3em;
   --bopomofo-gap: 0.02em;
+  // bopomofo glyph size relative to the hanzi, and its stroke weight
+  --bopomofo-size: 0.34em;
+  --bopomofo-weight: 400;
   --bopomofo-fade: 100ms;
 
   display: inline-flex;
@@ -28,7 +31,7 @@
   letter.pglyph {
     line-height: 1;
     // the symbol area sits half a slot below the column's centre
-    margin-top: 0.34em;
+    margin-top: var(--bopomofo-size);
   }
 
   .hanzi {
@@ -58,7 +61,8 @@
   }
 
   .bpmf {
-    font-size: 0.34em;
+    font-size: var(--bopomofo-size);
+    font-weight: var(--bopomofo-weight);
     display: grid;
     grid-template-columns: 1em 0.62em;
     // 2 half rows for ˙ + 4 symbol slots of 2 half rows each
@@ -116,6 +120,9 @@
   --bopomofo-dot-dx: 0.25em;
   --bopomofo-dot-dy: 0.6em;
   --bopomofo-gap: 0em;
+  // serif strokes are thin: larger and bolder bopomofo stay readable
+  --bopomofo-size: 0.4em;
+  --bopomofo-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
