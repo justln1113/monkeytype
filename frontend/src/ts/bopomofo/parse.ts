@@ -115,8 +115,9 @@ export function parseAnnotatedText(
 // The word pipeline (generator → Words) passes words around as space-free
 // strings, so units are encoded with control-character separators.
 const SEP = "\u0001";
-const HANZI_TAG = "\u0002H";
-const PUNCT_TAG = "\u0002P";
+// control characters only: the generator lowercases words
+const HANZI_TAG = "\u0002";
+const PUNCT_TAG = "\u0003";
 
 export function encodeUnit(unit: BopomofoUnit): string {
   if (unit.kind === "punct") {

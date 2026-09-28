@@ -36,6 +36,8 @@ export class Caret {
   private readyToResetMarginLeft: boolean = false;
   private isMainCaret: boolean = false;
   private cumulativeTapeMarginCorrection: number = 0;
+  /** inline height was set for a bopomofo word and must be cleared later */
+  private bopomofoSized: boolean = false;
 
   private posAnimation: JSAnimation | null = null;
   private marginTopAnimation: JSAnimation | null = null;
@@ -283,6 +285,7 @@ export class Caret {
     };
   }): void {
     if (this.style === "off") return;
+    const requestedLetterIndex = options.letterIndex;
     requestDebouncedAnimationFrame(`caret.${this.id}.goTo`, () => {
       const word = wordsCache.qs(
         `.word[data-wordindex="${options.wordIndex}"]`,
@@ -320,14 +323,22 @@ export class Caret {
 
       if (word === null) return;
 
-      const { left, top, width } = this.getTargetPositionAndWidth({
-        word,
-        letterIndex: options.letterIndex,
-        wordText,
-        side,
-        isLanguageRightToLeft: options.isLanguageRightToLeft,
-        isDirectionReversed: options.isDirectionReversed,
-      });
+      const isBopomofo = word.hasClass("bopomofo");
+      const { left, top, width } = isBopomofo
+        ? this.getBopomofoTarget(word, requestedLetterIndex)
+        : this.getTargetPositionAndWidth({
+            word,
+            letterIndex: options.letterIndex,
+            wordText,
+            side,
+            isLanguageRightToLeft: options.isLanguageRightToLeft,
+            isDirectionReversed: options.isDirectionReversed,
+          });
+      if (!isBopomofo && this.bopomofoSized) {
+        this.bopomofoSized = false;
+        this.element.setStyle({ height: "" });
+        this.resetWidth();
+      }
 
       // animation uses inline styles, so its fine to read inline here instead
       // of computed styles which would be much slower
@@ -374,7 +385,7 @@ export class Caret {
       const animateOrPositionOptions = {
         left: left - currentMarginLeft,
         top: top - currentMarginTop,
-        ...(this.isFullWidth() && { width }),
+        ...((this.isFullWidth() || isBopomofo) && { width }),
         ...(options.animate && options.animationOptions),
       };
 
@@ -384,6 +395,42 @@ export class Caret {
         this.setPosition(animateOrPositionOptions);
       }
     });
+  }
+
+  /**
+   * Bopomofo words stack their letters vertically. The caret is a bar in the
+   * gap above the next symbol slot (block/outline styles cover the slot).
+   */
+  private getBopomofoTarget(
+    word: ElementWithUtils,
+    letterIndex: number,
+  ): { left: number; top: number; width: number } {
+    const letters = word.qsa("letter");
+    const letter = letters[Math.min(letterIndex, letters.length - 1)];
+    if (letter === undefined) {
+      throw new Error("Caret getBopomofoTarget: no letters found in word");
+    }
+    const left = letter.getOffsetLeft() + word.getOffsetLeft();
+    const letterTop = letter.getOffsetTop() + word.getOffsetTop();
+    const width = letter.getOffsetWidth();
+    const letterHeight = letter.getOffsetHeight();
+
+    let top = letterTop;
+    let height = letterHeight;
+    if (this.style !== "block" && this.style !== "outline") {
+      const fontSize = parseFloat(getComputedStyle(letter.native).fontSize);
+      height = Math.max(2, fontSize * 0.12);
+      // grid rows are half slots; the gap above a slot is what exceeds the glyph
+      const parent = letter.native.parentElement;
+      const halfRow = parent
+        ? parseFloat(getComputedStyle(parent).gridTemplateRows) || 0
+        : 0;
+      const gapAbove = Math.max(0, halfRow - letterHeight / 2);
+      top = letterTop - gapAbove - height / 2;
+    }
+    this.bopomofoSized = true;
+    this.element.setStyle({ height: `${height}px` });
+    return { left, top, width };
   }
 
   private getTargetPositionAndWidth(options: {

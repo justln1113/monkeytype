@@ -719,7 +719,11 @@ export async function generateWords(
       if (sectionFinishedAndOverLimit || upperWordLimit) {
         stop = true;
       }
-    } else if (generatedCount(ret.words.length) >= limit) {
+    } else if (
+      generatedCount(ret.words.length) >= limit ||
+      // safety net: punctuation units never outnumber hanzi this much
+      (isBopomofoActive() && ret.words.length >= limit * 4)
+    ) {
       stop = true;
     }
     i++;

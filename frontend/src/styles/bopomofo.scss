@@ -1,0 +1,132 @@
+// Bopomofo mode: hanzi with a vertical bopomofo column on its right.
+// Offsets were tuned per font in the design review (values in em of the
+// bopomofo glyph size).
+.word.bopomofo {
+  --bopomofo-font:
+    "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --bopomofo-tone-dy: 0.65em;
+  --bopomofo-tone-dx: -0.02em;
+  --bopomofo-tone3-dy: -0.6em;
+  --bopomofo-tone3-dx: 0em;
+  --bopomofo-dot-dx: 0.25em;
+  --bopomofo-dot-dy: 0.3em;
+  --bopomofo-gap: 0.02em;
+  --bopomofo-fade: 100ms;
+
+  display: inline-flex;
+  align-items: center;
+  margin: 0.25em 0.15em 0.25em 0;
+  font-family: var(--bopomofo-font);
+  border-bottom: none;
+  text-shadow: none;
+
+  &.groupEnd {
+    margin-right: 0.5em;
+  }
+
+  .hanzi,
+  .punct,
+  letter.pglyph {
+    line-height: 1;
+    // the symbol area sits half a slot below the column's centre
+    margin-top: 0.34em;
+  }
+
+  .hanzi {
+    color: var(--untyped-letter-color);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 0.06em;
+    text-underline-offset: 0.18em;
+    transition:
+      color var(--bopomofo-fade),
+      text-decoration-color var(--bopomofo-fade);
+  }
+
+  .punct {
+    color: var(--sub-color);
+    opacity: 0.7;
+  }
+
+  &.active .hanzi,
+  &.typed .hanzi {
+    color: var(--correct-letter-color);
+  }
+
+  &.typed.error .hanzi {
+    color: var(--incorrect-letter-color);
+    text-decoration-color: var(--incorrect-letter-color);
+  }
+
+  .bpmf {
+    font-size: 0.34em;
+    display: grid;
+    grid-template-columns: 1em 0.62em;
+    // 2 half rows for ˙ + 4 symbol slots of 2 half rows each
+    grid-template-rows: repeat(10, calc(0.5em + var(--bopomofo-gap) / 2));
+    margin-left: 0.12em;
+
+    letter {
+      display: block;
+      align-self: center;
+      line-height: 1em;
+      text-align: center;
+      border-bottom: none;
+      transition: color var(--bopomofo-fade);
+
+      &.tone {
+        font-size: 0.9em;
+        line-height: 1.1em;
+        text-align: left;
+        margin-top: var(--bopomofo-tone-dy);
+        margin-left: var(--bopomofo-tone-dx);
+
+        &.three {
+          margin-top: var(--bopomofo-tone3-dy);
+          margin-left: var(--bopomofo-tone3-dx);
+        }
+
+        &.dot {
+          font-size: 1em;
+          line-height: 1em;
+          margin-top: var(--bopomofo-dot-dy);
+          margin-left: 0;
+          padding-left: var(--bopomofo-dot-dx);
+        }
+
+        // tone 1 is not written, but keeps its box so the caret can target it
+        &.toneHidden {
+          visibility: hidden;
+        }
+      }
+    }
+  }
+
+  // punctuation typed as its own unit
+  &.punctUnit letter.pglyph {
+    border-bottom: none;
+  }
+}
+
+#words.bopomofoSerif .word.bopomofo,
+#resultWordsHistory.bopomofoSerif .word.bopomofo {
+  --bopomofo-font: "Noto Serif TC", "PMingLiU", serif;
+  --bopomofo-tone-dy: 0.75em;
+  --bopomofo-tone-dx: -0.2em;
+  --bopomofo-tone3-dy: -0.6em;
+  --bopomofo-tone3-dx: -0.06em;
+  --bopomofo-dot-dx: 0.25em;
+  --bopomofo-dot-dy: 0.6em;
+  --bopomofo-gap: 0em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word.bopomofo {
+    --bopomofo-fade: 0ms;
+  }
+}
+
+// smooth caret off: colours switch instantly too
+#words.bopomofoInstant .word.bopomofo {
+  --bopomofo-fade: 0ms;
+}

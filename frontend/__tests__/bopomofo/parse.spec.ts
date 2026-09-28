@@ -4,6 +4,7 @@ import {
   encodeUnit,
   parseAnnotatedText,
   validateAnnotatedToken,
+  type BopomofoUnit,
 } from "../../src/ts/bopomofo/parse";
 
 describe("validateAnnotatedToken", () => {
@@ -95,6 +96,12 @@ describe("encodeUnit / decodeUnit", () => {
       expect(encoded).not.toMatch(/\s/);
       expect(decodeUnit(encoded)).toEqual(unit);
     }
+  });
+
+  it("survives the generator's case normalisation", () => {
+    const [unit] = parseAnnotatedText("我|ㄨㄛˇ");
+    const encoded = encodeUnit(unit as BopomofoUnit);
+    expect(decodeUnit(encoded.toLowerCase())).toEqual(unit);
   });
 
   it("returns null for ordinary words", () => {

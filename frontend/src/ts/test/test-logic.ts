@@ -1,3 +1,4 @@
+import { applyBopomofoAppearance } from "../bopomofo/appearance";
 import Ape from "../ape";
 import * as TestUI from "./test-ui";
 import * as Strings from "../utils/strings";
@@ -554,6 +555,7 @@ async function init(): Promise<boolean> {
 
   Funbox.toggleScript(TestWords.words.getCurrent()?.text ?? "");
   TestUI.setJoiningClass(allJoiningScript ?? language.joiningScript ?? false);
+  applyBopomofoAppearance(language.bopomofo === true);
 
   const isLanguageRTL = allRightToLeft ?? language.rightToLeft ?? false;
   setIsLanguageRightToLeft(isLanguageRTL);
