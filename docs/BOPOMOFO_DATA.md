@@ -7,6 +7,14 @@ Those readings were originally derived from the `tsi.src` of libtabe. The
 lists were filtered and annotated with the tooling described in the pull
 request that added them.
 
+Most bopomofo quotes (`frontend/static/quotes/bopomofo.json`, those whose
+source reads "Tatoeba #id") are sentences from Tatoeba (https://tatoeba.org),
+licensed under CC BY 2.0 FR
+(https://creativecommons.org/licenses/by/2.0/fr/). They were selected as
+Taiwan-style traditional Chinese, their half-width punctuation was made
+full-width, and bopomofo readings were added; each keeps its Tatoeba sentence
+number so the original can be found at https://tatoeba.org/sentences/show/<id>.
+
 ## McBopomofo
 
 ```
