@@ -1,4 +1,5 @@
 import { Config } from "../config/store";
+import { configEvent } from "../events/config";
 
 const FONTS_URL =
   "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400&family=Noto+Serif+TC:wght@400&display=swap";
@@ -14,6 +15,13 @@ function requestFonts(): void {
   document.head.appendChild(link);
 }
 
+function applyFont(): void {
+  const serif = Config.bopomofoFont === "serif";
+  for (const id of ["words", "resultWordsHistory"]) {
+    document.getElementById(id)?.classList.toggle("bopomofoSerif", serif);
+  }
+}
+
 export function applyBopomofoAppearance(active: boolean): void {
   if (active) requestFonts();
   const words = document.getElementById("words");
@@ -21,4 +29,14 @@ export function applyBopomofoAppearance(active: boolean): void {
     "bopomofoInstant",
     active && Config.smoothCaret === "off",
   );
+  applyFont();
 }
+
+configEvent.subscribe(({ key }) => {
+  if (key === "bopomofoFont") applyFont();
+  if (key === "smoothCaret") {
+    document
+      .getElementById("words")
+      ?.classList.toggle("bopomofoInstant", Config.smoothCaret === "off");
+  }
+});

@@ -79,6 +79,7 @@ const obj: Config = {
   minWpmCustomSpeed: 100,
   highlightMode: "letter",
   typedEffect: "keep",
+  bopomofoFont: "sans",
   typingSpeedUnit: "wpm",
   ads: "result",
   hideExtraLetters: false,

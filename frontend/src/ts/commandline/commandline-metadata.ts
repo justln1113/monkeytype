@@ -571,6 +571,11 @@ export const commandlineConfigMetadata: CommandlineConfigMetadataObject = {
       options: "fromSchema",
     },
   },
+  bopomofoFont: {
+    subgroup: {
+      options: "fromSchema",
+    },
+  },
   tapeMode: {
     subgroup: {
       options: "fromSchema",

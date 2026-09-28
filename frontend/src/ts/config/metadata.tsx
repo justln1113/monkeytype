@@ -879,6 +879,15 @@ export const configMetadata: ConfigMetadataObject = {
     group: "appearance",
     description: "Change how typed words are shown.",
   },
+  bopomofoFont: {
+    key: "bopomofoFont",
+    fa: { icon: "fa-font" },
+    displayString: "bopomofo font",
+    changeRequiresRestart: false,
+    group: "appearance",
+    description:
+      "Typeface for hanzi and their bopomofo in bopomofo languages: sans (Noto Sans TC) or serif (Noto Serif TC).",
+  },
   tapeMode: {
     key: "tapeMode",
     fa: { icon: "fa-tape" },

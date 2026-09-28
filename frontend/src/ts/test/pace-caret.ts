@@ -1,3 +1,4 @@
+import { isBopomofoActive } from "../bopomofo/mode";
 import * as TestWords from "./test-words";
 import { Config } from "../config/store";
 import * as DB from "../db";
@@ -64,6 +65,13 @@ export function resetCaretPosition(): void {
   });
 }
 
+function averageStepsPerWord(): number {
+  const words = TestWords.words.get();
+  if (words.length === 0) return 4;
+  const steps = words.reduce((sum, word) => sum + word.text.length + 1, 0);
+  return steps / words.length;
+}
+
 export async function init(): Promise<void> {
   caret.hide();
   const mode2 = Misc.getMode2(Config, getCurrentQuote());
@@ -105,7 +113,10 @@ export async function init(): Promise<void> {
     return;
   }
 
-  const characters = wpm * 5;
+  // the caret steps once per letter plus once for the word's end; a bopomofo
+  // speed counts hanzi, so convert with this test's average steps per hanzi
+  const stepsPerUnit = isBopomofoActive() ? averageStepsPerWord() : 5;
+  const characters = wpm * stepsPerUnit;
   const cps = characters / 60; //characters per step
   const spc = 60 / characters; //seconds per character
 

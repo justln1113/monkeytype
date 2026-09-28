@@ -208,6 +208,9 @@ export type HighlightMode = z.infer<typeof HighlightModeSchema>;
 export const TypedEffectSchema = z.enum(["keep", "hide", "fade", "dots"]);
 export type TypedEffect = z.infer<typeof TypedEffectSchema>;
 
+export const BopomofoFontSchema = z.enum(["sans", "serif"]);
+export type BopomofoFont = z.infer<typeof BopomofoFontSchema>;
+
 export const TapeModeSchema = z.enum(["off", "letter", "word"]);
 export type TapeMode = z.infer<typeof TapeModeSchema>;
 
@@ -470,6 +473,7 @@ export const ConfigSchema = z
     timerOpacity: TimerOpacitySchema,
     highlightMode: HighlightModeSchema,
     typedEffect: TypedEffectSchema,
+    bopomofoFont: BopomofoFontSchema,
     tapeMode: TapeModeSchema,
     tapeMargin: TapeMarginSchema,
     smoothLineScroll: z.boolean(),

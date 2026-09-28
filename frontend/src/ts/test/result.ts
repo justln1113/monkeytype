@@ -24,7 +24,6 @@ import * as Misc from "../utils/misc";
 import * as Strings from "../utils/strings";
 import * as Numbers from "@monkeytype/util/numbers";
 import * as Arrays from "../utils/arrays";
-import { get as getTypingSpeedUnit } from "../utils/typing-speed-units";
 import * as PbCrown from "./pb-crown";
 import * as TestUI from "./test-ui";
 import * as TodayTracker from "./today-tracker";
@@ -33,6 +32,11 @@ import * as Focus from "./focus";
 import * as CustomText from "./custom-text";
 import * as Funbox from "./funbox/funbox";
 import Format from "../singletons/format";
+import {
+  getSpeedFormat,
+  getSpeedUnitLabel,
+  getSpeedUnitSettings,
+} from "../bopomofo/format";
 import confetti from "canvas-confetti";
 import type {
   AnnotationOptions,
@@ -111,7 +115,7 @@ async function updateChartData(): Promise<void> {
     return;
   }
 
-  const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+  const typingSpeedUnit = getSpeedUnitSettings();
   ChartController.result.getScale("wpm").title.text =
     typingSpeedUnit.fullUnitString;
 
@@ -181,7 +185,7 @@ async function updateChartData(): Promise<void> {
   ChartController.result.data.labels = labels;
 
   ChartController.result.getDataset("wpm").data = chartData1;
-  ChartController.result.getDataset("wpm").label = Config.typingSpeedUnit;
+  ChartController.result.getDataset("wpm").label = getSpeedUnitLabel();
 
   ChartController.result.getDataset("raw").data = chartData2;
 
@@ -219,7 +223,7 @@ function applyFakeChartData(): void {
 
   const labels = fakeChartData.wpm.map((_, i) => (i + 1).toString());
 
-  const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+  const typingSpeedUnit = getSpeedUnitSettings();
 
   const chartData1 = [
     ...fakeChartData.wpm.map((a) =>
@@ -265,7 +269,7 @@ function applyFakeChartData(): void {
   ChartController.result.data.labels = labels;
 
   ChartController.result.getDataset("wpm").data = chartData1;
-  ChartController.result.getDataset("wpm").label = Config.typingSpeedUnit;
+  ChartController.result.getDataset("wpm").label = getSpeedUnitLabel();
   ChartController.result.getScale("wpm").min = minChartVal;
   ChartController.result.getScale("wpm").max = maxChartVal;
 
@@ -295,7 +299,7 @@ export async function updateChartPBLine(): Promise<void> {
   );
   const localPbWpm = localPb?.wpm ?? 0;
   if (localPbWpm === 0) return;
-  const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+  const typingSpeedUnit = getSpeedUnitSettings();
   const chartlpb = Numbers.roundTo2(
     typingSpeedUnit.fromWpm(localPbWpm),
   ).toFixed(2);
@@ -328,19 +332,21 @@ export async function updateChartPBLine(): Promise<void> {
 }
 
 function updateWpmAndAcc(): void {
+  const speed = getSpeedFormat();
+  const speedUnit = getSpeedUnitLabel();
   let inf = false;
   if (result.wpm >= 1000) {
     inf = true;
   }
 
-  qs("#result .stats .wpm .top .text")?.setText(Config.typingSpeedUnit);
+  qs("#result .stats .wpm .top .text")?.setText(speedUnit);
 
   if (inf) {
     qs("#result .stats .wpm .bottom")?.setText("Infinite");
   } else {
-    qs("#result .stats .wpm .bottom")?.setText(Format.typingSpeed(result.wpm));
+    qs("#result .stats .wpm .bottom")?.setText(speed.typingSpeed(result.wpm));
   }
-  qs("#result .stats .raw .bottom")?.setText(Format.typingSpeed(result.rawWpm));
+  qs("#result .stats .raw .bottom")?.setText(speed.typingSpeed(result.rawWpm));
   qs("#result .stats .acc .bottom")?.setText(
     result.acc === 100 ? "100%" : Format.accuracy(result.acc),
   );
@@ -349,7 +355,7 @@ function updateWpmAndAcc(): void {
   if (accEventLog !== null) {
     const acc = getAccuracy(accEventLog);
     if (Config.alwaysShowDecimalPlaces) {
-      if (Config.typingSpeedUnit !== "wpm") {
+      if (speed.typingSpeedUnit !== "wpm") {
         qs("#result .stats .wpm .bottom")?.setAttribute(
           "aria-label",
           `${result.wpm.toFixed(2)} wpm`,
@@ -378,12 +384,12 @@ function updateWpmAndAcc(): void {
       //not showing decimal places
       const decimalsAndSuffix = {
         showDecimalPlaces: true,
-        suffix: ` ${Config.typingSpeedUnit}`,
+        suffix: ` ${speedUnit}`,
       };
-      let wpmHover = Format.typingSpeed(result.wpm, decimalsAndSuffix);
-      let rawWpmHover = Format.typingSpeed(result.rawWpm, decimalsAndSuffix);
+      let wpmHover = speed.typingSpeed(result.wpm, decimalsAndSuffix);
+      let rawWpmHover = speed.typingSpeed(result.rawWpm, decimalsAndSuffix);
 
-      if (Config.typingSpeedUnit !== "wpm") {
+      if (speed.typingSpeedUnit !== "wpm") {
         wpmHover += ` (${result.wpm.toFixed(2)} wpm)`;
         rawWpmHover += ` (${result.rawWpm.toFixed(2)} wpm)`;
       }
@@ -524,7 +530,7 @@ export async function updateCrown(dontSave: boolean): Promise<void> {
       console.debug("Showing pending crown");
       showCrown("pending");
       updateCrownText(
-        `+${Format.typingSpeed(pbDiff, { showDecimalPlaces: true })}`,
+        `+${getSpeedFormat().typingSpeed(pbDiff, { showDecimalPlaces: true })}`,
       );
     }
   } else {
@@ -553,7 +559,7 @@ export async function updateCrown(dontSave: boolean): Promise<void> {
       console.debug("Showing ineligible crown");
       showCrown("ineligible");
       updateCrownText(
-        `You could've gotten a new PB (+${Format.typingSpeed(pbDiff, {
+        `You could've gotten a new PB (+${getSpeedFormat().typingSpeed(pbDiff, {
           showDecimalPlaces: true,
         })}), but your config does not allow it (${canGetPb.reason})`,
         true,
@@ -697,7 +703,7 @@ async function updateTags(dontSave: boolean): Promise<void> {
     qs("#result .stats .tags .bottom")?.appendHtml(`
       <div tagid="${tag._id}" aria-label="PB: ${tpb}" data-balloon-pos="up">${tag.name}<i class="fas fa-crown hidden"></i></div>
     `);
-    const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+    const typingSpeedUnit = getSpeedUnitSettings();
     if (
       Config.mode !== "quote" &&
       !dontSave &&
@@ -1170,7 +1176,7 @@ function updateMinMaxChartValues(): void {
   }
 
   if (maxAnnotation !== null) {
-    const typingSpeedUnit = getTypingSpeedUnit(Config.typingSpeedUnit);
+    const typingSpeedUnit = getSpeedUnitSettings();
     const lpbRange = typingSpeedUnit.fromWpm(20);
     if (
       maxChartVal >= maxAnnotation - lpbRange &&
