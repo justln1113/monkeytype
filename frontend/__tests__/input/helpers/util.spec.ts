@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getCommitCharacterType } from "../../../src/ts/input/helpers/util";
+import {
+  getCommitCharacterType,
+  normalizeData,
+} from "../../../src/ts/input/helpers/util";
 import * as FunboxList from "../../../src/ts/test/funbox/list";
 import { __testing } from "../../../src/ts/config/testing";
 
@@ -161,5 +164,32 @@ describe("getCommitCharacterType", () => {
         }),
       ).toBe(false);
     });
+  });
+});
+
+describe("normalizeData - bopomofo tone sandhi", () => {
+  beforeEach(() => {
+    __testing.replaceConfig({ language: "bopomofo" });
+  });
+
+  // IMEs take 一 and 不 in either their dictionary or their spoken tone
+  it.each([
+    ["不", "ㄅㄨˊ", "ˋ"],
+    ["不", "ㄅㄨˋ", "ˊ"],
+    ["一", "ㄧˊ", "ˉ"],
+    ["一", "ㄧˉ", "ˋ"],
+  ])("takes the other tone of %s (%s) typed as %s", (hanzi, target, typed) => {
+    const inputValue = target.slice(0, -1);
+    expect(normalizeData(typed, inputValue, target, hanzi)).toBe(
+      target.slice(-1),
+    );
+  });
+
+  it("keeps a tone 不 never takes", () => {
+    expect(normalizeData("ˇ", "ㄅㄨ", "ㄅㄨˊ", "不")).toBe("ˇ");
+  });
+
+  it("keeps other hanzi strict", () => {
+    expect(normalizeData("ˋ", "ㄇㄟ", "ㄇㄟˊ", "沒")).toBe("ˋ");
   });
 });

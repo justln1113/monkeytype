@@ -1,8 +1,9 @@
 import { isFunboxActiveWithProperty } from "../../test/funbox/list";
 import { areCharactersVisuallyEqual, isSpace } from "../../utils/strings";
 import { Config } from "../../config/store";
+import * as TestWords from "../../test/test-words";
 import { isBopomofoActive } from "../../bopomofo/mode";
-import { isPunctTarget, isToneMark } from "../../bopomofo/parse";
+import { isPunctTarget, isSandhiTone, isToneMark } from "../../bopomofo/parse";
 
 /**
  * What kind of commit a character triggers, or false if it does not commit.
@@ -62,8 +63,16 @@ export function normalizeData(
   data: string,
   inputValue: string,
   targetWord: string,
+  bopomofoHanzi?: string,
 ): string {
   const targetChar = targetWord[inputValue.length];
+  if (
+    bopomofoHanzi !== undefined &&
+    targetChar !== undefined &&
+    isSandhiTone(bopomofoHanzi, data, targetChar)
+  ) {
+    return targetChar;
+  }
   if (
     targetChar !== undefined &&
     areCharactersVisuallyEqual(data, targetChar, Config.language)
@@ -74,4 +83,10 @@ export function normalizeData(
     return " ";
   }
   return data;
+}
+
+/** The hanzi being typed in bopomofo mode, for tone sandhi. */
+export function currentBopomofoHanzi(): string | undefined {
+  const unit = TestWords.words.getCurrent()?.bopomofo;
+  return unit?.kind === "hanzi" ? unit.hanzi : undefined;
 }

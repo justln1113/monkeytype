@@ -31,6 +31,19 @@ export function isToneMark(char: string): boolean {
   return toneSet.has(char);
 }
 
+// Tone sandhi: IMEs take 一 and 不 in their dictionary or their spoken tone,
+// so any of these tones counts as the one in the target.
+const SANDHI_TONES: Record<string, string> = { 一: "ˉˊˋ", 不: "ˋˊ" };
+
+export function isSandhiTone(
+  hanzi: string,
+  tone: string,
+  target: string,
+): boolean {
+  const tones = SANDHI_TONES[hanzi];
+  return (tones?.includes(tone) ?? false) && tones?.includes(target) === true;
+}
+
 /** Symbol slots in the bopomofo column: 3 for a syllable, one for a typo. */
 export const SYMBOL_SLOTS = 4;
 

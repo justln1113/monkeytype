@@ -12,6 +12,7 @@ import {
 } from "../../states/test";
 import { shouldGoToNextWord } from "../helpers/validation";
 import {
+  currentBopomofoHanzi,
   getCommitCharacterType,
   isNoSeparatorMode,
   normalizeData,
@@ -56,7 +57,12 @@ export function onBeforeInsertText(data: string): boolean {
 
   //normalize visually-equivalent chars (e.g. IME U+3000 space) to the target
   //char, matching onInsertText, so commit classification is consistent
-  data = normalizeData(data, inputValue, currentWordTextWithCommit);
+  data = normalizeData(
+    data,
+    inputValue,
+    currentWordTextWithCommit,
+    currentBopomofoHanzi(),
+  );
 
   if (
     isBopomofoActive() &&
