@@ -1,4 +1,12 @@
 import { Config } from "../config/store";
+import { isBopomofoActive } from "../bopomofo/mode";
+import {
+  expandQuoteText,
+  expandToken,
+  isHanziUnit,
+  maybePunctuationUnit,
+  pickFittingToken,
+} from "../bopomofo/generation";
 import { setConfig, setQuoteLengthAll, toggleFunbox } from "../config/setters";
 import * as CustomText from "./custom-text";
 import { Wordset, FunboxWordsFrequency, withWords } from "./wordset";
@@ -570,7 +578,7 @@ async function getQuoteWordList(
   rq.language = Strings.removeLanguageSize(Config.language);
   rq.text = rq.text.replace(/ +/gm, " ");
   rq.text = rq.text.replace(/( *(\r\n|\r|\n) *)/g, "\n ");
-  rq.text = rq.text.replace(/…/g, "...");
+  if (!isBopomofoActive()) rq.text = rq.text.replace(/…/g, "...");
   rq.text = rq.text.trim();
 
   if (
@@ -581,6 +589,10 @@ async function getQuoteWordList(
     rq.textSplit = rq.britishText.split(" ");
   } else {
     rq.textSplit = rq.text.split(" ");
+  }
+  if (isBopomofoActive()) {
+    // one entry per typed unit, so quote length is counted in hanzi
+    rq.textSplit = expandQuoteText(rq.text, Config.punctuation);
   }
 
   setCurrentQuote(rq as QuoteWithTextSplit);
@@ -623,6 +635,7 @@ export async function generateWords(
   currentSection = [];
   sectionIndex = 0;
   sectionHistory = [];
+  bopomofoHanziGenerated = 0;
   currentLanguage = language;
   const rawWordList: string[] = [];
   const ret: GenerateWordsReturn = {
@@ -706,7 +719,11 @@ export async function generateWords(
       if (sectionFinishedAndOverLimit || upperWordLimit) {
         stop = true;
       }
-    } else if (ret.words.length >= limit) {
+    } else if (
+      generatedCount(ret.words.length) >= limit ||
+      // stop at 4× the hanzi limit in units: punctuation units add no hanzi
+      (isBopomofoActive() && ret.words.length >= limit * 4)
+    ) {
       stop = true;
     }
     i++;
@@ -734,6 +751,27 @@ export async function generateWords(
 }
 
 export let sectionIndex = 0;
+/** hanzi generated so far; bopomofo words mode counts hanzi, not units */
+let bopomofoHanziGenerated = 0;
+
+function generatedCount(wordCount: number): number {
+  return isBopomofoActive() && Config.mode === "words"
+    ? bopomofoHanziGenerated
+    : wordCount;
+}
+
+function bopomofoSection(token: string): string[] {
+  const units = expandToken(token, Config.punctuation);
+  if (Config.punctuation && Config.mode !== "quote") {
+    const punct = maybePunctuationUnit(random);
+    if (punct !== null) units.push(punct);
+  }
+  return units;
+}
+
+function countBopomofoHanzi(word: string): void {
+  if (isBopomofoActive() && isHanziUnit(word)) bopomofoHanziGenerated++;
+}
 export let currentSection: string[] = [];
 let sectionHistory: string[] = [];
 
@@ -807,6 +845,7 @@ export async function getNextWord(
     } else {
       console.debug("Repeated word: ", repeated);
       sectionIndex++;
+      countBopomofoHanzi(repeated.wordRaw);
       return repeated;
     }
   }
@@ -854,6 +893,15 @@ export async function getNextWord(
       }
     } else if (isCurrentlyUsingFunboxSection) {
       randomWord = funboxSection.join(" ");
+    } else if (isBopomofoActive()) {
+      const wordset = currentWordset;
+      randomWord =
+        Config.mode === "words" && Config.words > 0
+          ? pickFittingToken(
+              () => wordset.randomWord(funboxFrequency),
+              Config.words - bopomofoHanziGenerated,
+            )
+          : wordset.randomWord(funboxFrequency);
     } else {
       let regenarationCount = 0; //infinite loop emergency stop button
       let firstAfterSplit = (randomWord.split(" ")[0] as string).toLowerCase();
@@ -890,7 +938,9 @@ export async function getNextWord(
 
     randomWord = getFunboxWord(randomWord, wordIndex, currentWordset);
 
-    currentSection = [...randomWord.split(" ")];
+    currentSection = isBopomofoActive()
+      ? bopomofoSection(randomWord)
+      : [...randomWord.split(" ")];
     sectionHistory.push(randomWord);
     randomWord = currentSection.shift() as string;
     sectionIndex++;
@@ -942,7 +992,8 @@ export async function getNextWord(
   if (
     Config.punctuation &&
     !currentLanguage.originalPunctuation &&
-    !isCurrentlyUsingFunboxSection
+    !isCurrentlyUsingFunboxSection &&
+    !isBopomofoActive()
   ) {
     randomWord = await punctuateWord(
       previousWord,
@@ -954,7 +1005,7 @@ export async function getNextWord(
 
   randomWord = await applyBritishEnglishToWord(randomWord, previousWordRaw);
 
-  if (Config.numbers) {
+  if (Config.numbers && !isBopomofoActive()) {
     if (random() < 0.1) {
       randomWord = GetText.getNumbers(4);
 
@@ -973,6 +1024,7 @@ export async function getNextWord(
   randomWord = applyFunboxesToWord(randomWord, wordIndex, wordsBound);
 
   console.debug("Word:", randomWord);
+  countBopomofoHanzi(randomWord);
 
   const ret = {
     word: appendCommitCharacter(randomWord),
@@ -992,7 +1044,11 @@ export async function getNextWord(
  * pulls) must use this so the separator is part of the target word.
  */
 export function appendCommitCharacter(word: string): string {
-  if (word.endsWith("\n") || isFunboxActiveWithProperty("nospace")) {
+  if (
+    word.endsWith("\n") ||
+    isFunboxActiveWithProperty("nospace") ||
+    isBopomofoActive()
+  ) {
     return word;
   }
   return `${word} `;
@@ -1001,7 +1057,7 @@ export function appendCommitCharacter(word: string): string {
 export function areAllWordsGenerated(): boolean {
   return (
     (Config.mode === "words" &&
-      TestWords.words.length >= Config.words &&
+      generatedCount(TestWords.words.length) >= Config.words &&
       Config.words > 0) ||
     (Config.mode === "custom" &&
       CustomText.getLimitMode() === "word" &&

@@ -450,6 +450,9 @@ export const LanguageSchema = z.enum(
     "code_6502_assembly",
     "english_legal",
     "sindhi",
+    "bopomofo",
+    "bopomofo_1k",
+    "bopomofo_5k",
   ],
   {
     errorMap: customEnumErrorHandler("Must be a supported language"),
@@ -472,6 +475,8 @@ export const LanguageObjectSchema = z
     bcp47: z.string().optional(),
     preferredFont: KnownFontNameSchema.optional(),
     originalPunctuation: z.boolean().optional(),
+    // words are annotated tokens ("我們|ㄨㄛˇㄇㄣ˙"); the test types the bopomofo
+    bopomofo: z.boolean().optional(),
   })
   .strict();
 export type LanguageObject = z.infer<typeof LanguageObjectSchema>;

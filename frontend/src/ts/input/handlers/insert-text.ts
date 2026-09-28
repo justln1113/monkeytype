@@ -28,7 +28,11 @@ import { goToNextWord, goToPreviousWord } from "../helpers/word-navigation";
 import { onBeforeInsertText } from "./before-insert-text";
 import { shouldGoToNextWord, isCharCorrect } from "../helpers/validation";
 import { getCurrentInput, logTestEvent } from "../../test/events/data";
-import { getCommitCharacterType, normalizeData } from "../helpers/util";
+import {
+  currentBopomofoHanzi,
+  getCommitCharacterType,
+  normalizeData,
+} from "../helpers/util";
 import { areAllWordsGenerated } from "../../test/words-generator";
 import { getActiveWordIndex, isTestActive } from "../../states/test";
 import { DeleteInputType } from "../helpers/input-type";
@@ -378,7 +382,12 @@ function normalizeDataAndUpdateInputIfNeeded(
   testInput: string,
   currentWord: string,
 ): string | null {
-  const normalized = normalizeData(data, testInput, currentWord);
+  const normalized = normalizeData(
+    data,
+    testInput,
+    currentWord,
+    currentBopomofoHanzi(),
+  );
   if (normalized !== data) {
     replaceInputElementLastValueChar(normalized);
     return normalized;

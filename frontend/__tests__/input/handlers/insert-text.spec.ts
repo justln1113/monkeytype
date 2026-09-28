@@ -431,3 +431,58 @@ describe("onInsertText - delete on error", () => {
     expect(incorrect).toHaveLength(1);
   });
 });
+
+describe("onInsertText - bopomofo", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetTestEvents();
+    TestWords.reset();
+    mockState.activeWordIndex = 0;
+    setInput("");
+    replaceConfig({
+      mode: "words",
+      language: "bopomofo",
+      deleteOnError: "off",
+      stopOnError: "off",
+      difficulty: "normal",
+      strictSpace: false,
+      oppositeShiftMode: "off",
+      keymapMode: "off",
+    });
+    // hanzi units carry no separator: the tone mark ends each one
+    TestWords.push("ㄇㄟˊ", 0);
+    TestWords.push("ㄧㄡˇ", 1);
+  });
+
+  it("moves to the next hanzi on the tone mark", async () => {
+    await type("ㄇ");
+    await type("ㄟ");
+    expect(nav.goToNextWord).not.toHaveBeenCalled();
+
+    await type("ˊ");
+    expect(nav.goToNextWord).toHaveBeenCalledWith(
+      expect.objectContaining({ correctInsert: true }),
+    );
+    expect(getInputForWord(0)).toBe("ㄇㄟˊ");
+    expect(mockState.activeWordIndex).toBe(1);
+  });
+
+  it("commits a wrong tone as an incorrect hanzi", async () => {
+    await type("ㄇ");
+    await type("ㄟ");
+    await type("ˇ");
+    expect(nav.goToNextWord).toHaveBeenCalledWith(
+      expect.objectContaining({ correctInsert: false }),
+    );
+    const last = inputEventsForWord(0).at(-1)?.data;
+    expect(last !== undefined && "correct" in last && last.correct).toBe(false);
+  });
+
+  it("commits a syllable with a missing symbol as incorrect", async () => {
+    await type("ㄇ");
+    await type("ˊ");
+    expect(nav.goToNextWord).toHaveBeenCalledWith(
+      expect.objectContaining({ correctInsert: false }),
+    );
+  });
+});

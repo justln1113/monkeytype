@@ -7,7 +7,13 @@ vi.mock("../../../src/ts/test/test-stats", () => ({
 const mockState = vi.hoisted(() => ({ activeWordIndex: 0 }));
 
 vi.mock("../../../src/ts/config/store", () => ({
-  Config: { mode: "words", funbox: [] as string[], words: 25, time: 0 },
+  Config: {
+    mode: "words",
+    funbox: [] as string[],
+    words: 25,
+    time: 0,
+    language: "english",
+  },
   getConfig: {},
 }));
 
@@ -84,6 +90,9 @@ import {
   getCorrectedWordsHistory,
   getKeypressSpacing,
   getMissedWords,
+  getRawHistory,
+  getWordBurst,
+  getHanziCounts,
 } from "../../../src/ts/test/events/stats";
 import type {
   InputEventData,
@@ -200,6 +209,7 @@ describe("stats.ts", () => {
     (Config as { funbox: string[] }).funbox = [];
     (Config as { words: number }).words = 25;
     (Config as { time: number }).time = 0;
+    (Config as { language: string }).language = "english";
     mockState.activeWordIndex = 0;
     TestWords.reset();
     inputPerWord.clear();
@@ -2088,6 +2098,101 @@ describe("stats.ts", () => {
       ]);
       // the flag is informational - it does not change what is derived
       expect(getInputHistory(buildEventLog())[0]).toBe("");
+    });
+  });
+
+  describe("bopomofo (hanzi per minute)", () => {
+    // one entry per hanzi, no separators: the tone mark ends each one
+    function typeSyllable(
+      wordIndex: number,
+      keys: string,
+      startMs: number,
+    ): void {
+      [...keys].forEach((data, i) => {
+        const isLast = i === [...keys].length - 1;
+        logTestEvent(
+          "input",
+          startMs + i * 100,
+          input({
+            wordIndex,
+            charIndex: i,
+            data,
+            ...(isLast && { commitsWord: true }),
+          }),
+        );
+      });
+    }
+
+    beforeEach(() => {
+      (Config as { language: string }).language = "bopomofo";
+      for (const [i, w] of ["ㄇㄟˊ", "ㄧㄡˇ", "ㄈㄚˉ"].entries()) {
+        TestWords.push(w, i);
+      }
+    });
+
+    it("counts correct and committed hanzi, ignoring the one in progress", () => {
+      logTestEvent("timer", 1000, timer("start", 0));
+      typeSyllable(0, "ㄇㄟˊ", 1100);
+      typeSyllable(1, "ㄧㄡˋ", 1500); // wrong tone
+      logTestEvent("input", 1900, input({ wordIndex: 2, data: "ㄈ" }));
+
+      expect(getHanziCounts(buildEventLog())).toEqual({
+        correct: 1,
+        committed: 2,
+      });
+    });
+
+    it("wpm history is correct hanzi per minute", () => {
+      logTestEvent("timer", 1000, timer("start", 0));
+      typeSyllable(0, "ㄇㄟˊ", 1100);
+      logTestEvent("timer", 2000, timer("step", 1));
+      typeSyllable(1, "ㄧㄡˋ", 2100);
+      logTestEvent("timer", 3000, timer("step", 2));
+      logTestEvent("timer", 3000, timer("end", 2));
+
+      // 1 hanzi in 1s = 60; still 1 correct hanzi after 2s = 30
+      expect(getWpmHistory(buildEventLog())).toEqual([60, 30]);
+    });
+
+    it("raw history is committed hanzi per minute", () => {
+      logTestEvent("timer", 1000, timer("start", 0));
+      typeSyllable(0, "ㄇㄟˊ", 1100);
+      logTestEvent("timer", 2000, timer("step", 1));
+      typeSyllable(1, "ㄧㄡˋ", 2100);
+      logTestEvent("timer", 3000, timer("step", 2));
+      logTestEvent("timer", 3000, timer("end", 2));
+
+      expect(getRawHistory(buildEventLog())).toEqual([60, 60]);
+    });
+
+    it("burst is one hanzi over its typing time", () => {
+      logTestEvent("timer", 1000, timer("start", 0));
+      // first key at 1100, tone at 1600: 0.5s per hanzi = 120 per minute
+      logTestEvent("input", 1100, input({ wordIndex: 0, data: "ㄇ" }));
+      logTestEvent(
+        "input",
+        1350,
+        input({ wordIndex: 0, charIndex: 1, data: "ㄟ" }),
+      );
+      logTestEvent(
+        "input",
+        1600,
+        input({ wordIndex: 0, charIndex: 2, data: "ˊ", commitsWord: true }),
+      );
+
+      expect(getWordBurst(buildEventLog(), 0)).toBe(120);
+    });
+
+    it("per-second burst counts hanzi committed in each second", () => {
+      logTestEvent("timer", 1000, timer("start", 0));
+      typeSyllable(0, "ㄇㄟˊ", 1100);
+      typeSyllable(1, "ㄧㄡˇ", 1500);
+      logTestEvent("timer", 2000, timer("step", 1));
+      typeSyllable(2, "ㄈㄚˉ", 2100);
+      logTestEvent("timer", 3000, timer("step", 2));
+      logTestEvent("timer", 3000, timer("end", 2));
+
+      expect(getBurstHistory(buildEventLog())).toEqual([120, 60]);
     });
   });
 });

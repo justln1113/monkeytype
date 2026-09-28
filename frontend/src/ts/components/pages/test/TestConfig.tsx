@@ -1,5 +1,6 @@
 import { ComponentProps, For, JSXElement, Show } from "solid-js";
 
+import { quoteKeepsPunctuationToggle } from "../../../bopomofo/mode";
 import { configMetadata } from "../../../config/metadata";
 import { setConfig, setQuoteLengthAll } from "../../../config/setters";
 import { getConfig } from "../../../config/store";
@@ -103,7 +104,12 @@ function PuncAndNum(): JSXElement {
                 text={configMetadata[configKey].displayString ?? configKey}
                 active={getConfig[configKey]}
                 disabled={
-                  getConfig.mode === "zen" || getConfig.mode === "quote"
+                  getConfig.mode === "zen" ||
+                  (getConfig.mode === "quote" &&
+                    !(
+                      configKey === "punctuation" &&
+                      quoteKeepsPunctuationToggle(getConfig.language)
+                    ))
                 }
                 onClick={() => {
                   setConfig(configKey, !getConfig[configKey]);

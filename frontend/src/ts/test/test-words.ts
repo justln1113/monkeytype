@@ -1,4 +1,5 @@
 import { getActiveWordIndex } from "../states/test";
+import { decodeUnit, unitTarget, type BopomofoUnit } from "../bopomofo/parse";
 
 type CommitChar = " " | "\n" | "";
 
@@ -8,6 +9,8 @@ type Word = {
   commit: CommitChar;
   display: string;
   sectionIndex: number;
+  /** set in bopomofo mode: text is the bopomofo to type, this is what is shown */
+  bopomofo?: BopomofoUnit;
 };
 
 const commitCharsToDisplay: Set<CommitChar> = new Set(["\n"]);
@@ -40,6 +43,7 @@ class Words {
           display:
             text + (commitCharsToDisplay.has(word.commit) ? word.commit : ""),
           sectionIndex: word.sectionIndex,
+          bopomofo: word.bopomofo,
         };
       } else {
         return word;
@@ -50,6 +54,21 @@ class Words {
     return this.list[getActiveWordIndex()];
   }
   push(word: string, sectionIndex: number): Word {
+    const unit = decodeUnit(word);
+    if (unit !== null) {
+      const text = unitTarget(unit);
+      const wordObj: Word = {
+        text,
+        textWithCommit: text,
+        commit: "",
+        display: text,
+        sectionIndex,
+        bopomofo: unit,
+      };
+      this.list.push(wordObj);
+      this.length = this.list.length;
+      return wordObj;
+    }
     let commit: CommitChar = "";
     if (word.endsWith(" ")) {
       commit = " ";

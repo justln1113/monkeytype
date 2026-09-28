@@ -1,12 +1,34 @@
 import * as TestUI from "../../test/test-ui";
 import * as TestWords from "../../test/test-words";
-import { getInputElementValue, setInputElementValue } from "../input-element";
+import {
+  getInputElement,
+  getInputElementValue,
+  setInputElementValue,
+} from "../input-element";
+import { onBeforeDelete } from "./before-delete";
 
 import { Config } from "../../config/store";
 import { goToPreviousWord } from "../helpers/word-navigation";
 import { DeleteInputType } from "../helpers/input-type";
 import { getCurrentInput, logTestEvent } from "../../test/events/data";
 import { getActiveWordIndex } from "../../states/test";
+
+/**
+ * Backspace for keys that never reach the textarea (bopomofo capture field):
+ * runs the same checks and edits the value the browser would have.
+ */
+export function emulateDelete(inputType: DeleteInputType, now: number): void {
+  const event = new InputEvent("beforeinput", { inputType, cancelable: true });
+  onBeforeDelete(event);
+  if (event.defaultPrevented) return;
+
+  const { inputValue, realInputValue } = getInputElementValue();
+  const wordBackward = inputType === "deleteWordBackward";
+  // an empty value (fake leading space gone) means "go back a word"
+  getInputElement().value =
+    wordBackward && inputValue !== "" ? " " : realInputValue.slice(0, -1);
+  onDelete(inputType, now);
+}
 
 export function onDelete(inputType: DeleteInputType, now: number): void {
   const { realInputValue } = getInputElementValue();

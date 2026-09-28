@@ -1,7 +1,8 @@
 import { createMemo } from "solid-js";
 
 import { getConfig } from "../config/store";
-import Format from "../singletons/format";
+import { getSpeedFormat } from "../bopomofo/format";
+import { isBopomofoLanguage } from "../bopomofo/mode";
 import * as CustomText from "../test/custom-text";
 import * as TestWords from "../test/test-words";
 import { secondsToString } from "../utils/date-and-time";
@@ -40,6 +41,13 @@ function getCurrentWordCount(): number {
     const sectionIndex =
       TestWords.words.get(getActiveWordIndex())?.sectionIndex;
     return sectionIndex === undefined ? 0 : sectionIndex - 1;
+  }
+  if (getConfig.mode === "words" && isBopomofoLanguage(getConfig.language)) {
+    // punctuation units don't count toward the hanzi limit
+    return TestWords.words
+      .get()
+      .slice(0, getActiveWordIndex())
+      .filter((word) => word.bopomofo?.kind === "hanzi").length;
   }
   return getActiveWordIndex();
 }
@@ -90,7 +98,7 @@ export function getBarTarget(): {
 
 export const showLiveStats = createMemo(() => isTestActive() && getFocus());
 export const getLiveSpeedText = createMemo(() =>
-  Format.typingSpeed(
+  getSpeedFormat().typingSpeed(
     (getConfig.blindMode ? currentLiveStats.raw : currentLiveStats.wpm) ?? 0,
     { showDecimalPlaces: false },
   ),
@@ -100,7 +108,9 @@ export const getLiveAccText = createMemo(
     `${getConfig.blindMode ? 100 : Math.floor(currentLiveStats.acc ?? 100)}%`,
 );
 export const getLiveBurstText = createMemo(() =>
-  Format.typingSpeed(currentLiveStats.burst ?? 0, { showDecimalPlaces: false }),
+  getSpeedFormat().typingSpeed(currentLiveStats.burst ?? 0, {
+    showDecimalPlaces: false,
+  }),
 );
 
 /** Countdown / word counter shown by the timer displays. */

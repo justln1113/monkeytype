@@ -144,6 +144,8 @@ export type EventLogContext = {
   customTextLimitMode?: CustomTextLimitMode;
   customTextLimitValue?: number;
   isFunboxWithNospacePropertyActive?: boolean;
+  // speed is counted in hanzi, not characters
+  bopomofo?: true;
   bailedOut: boolean;
   koreanStatus: boolean;
 };

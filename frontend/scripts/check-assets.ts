@@ -20,6 +20,7 @@ import { z } from "zod";
 import { LayoutObject, LayoutObjectSchema } from "@monkeytype/schemas/layouts";
 import { QuoteDataSchema, QuoteData } from "@monkeytype/schemas/quotes";
 import { clickSoundConfig } from "../src/ts/constants/sounds";
+import { validateAnnotatedToken } from "../src/ts/bopomofo/parse";
 import * as ghCore from "@actions/core";
 
 const stepSummary =
@@ -209,6 +210,21 @@ async function validateQuotes(): Promise<void> {
       }
     });
 
+    //check bopomofo annotation
+    if (isBopomofoLanguage(quoteData.language)) {
+      for (const quote of quoteData.quotes) {
+        for (const token of quote.text.split(" ")) {
+          const problem = validateAnnotatedToken(token);
+          if (problem !== null) {
+            problems.add(
+              quotefilename,
+              `ID ${quote.id}: "${token}" ${problem}`,
+            );
+          }
+        }
+      }
+    }
+
     //check groups
     let last = -1;
     for (const group of quoteData.groups) {
@@ -231,6 +247,17 @@ async function validateQuotes(): Promise<void> {
 
   if (problems.hasError()) {
     throw new Error("quotes with errors");
+  }
+}
+
+function isBopomofoLanguage(language: string): boolean {
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(`./static/languages/${language}.json`, "utf8"),
+    ) as LanguageObject;
+    return data.bopomofo === true;
+  } catch {
+    return false;
   }
 }
 
@@ -272,6 +299,12 @@ async function validateLanguages(): Promise<void> {
 
     if (languageFileData.name !== language) {
       problems.add(language, `Name is not ${language}`);
+    }
+    if (languageFileData.bopomofo === true) {
+      for (const token of languageFileData.words) {
+        const problem = validateAnnotatedToken(token);
+        if (problem !== null) problems.add(language, `"${token}" ${problem}`);
+      }
     }
     const duplicates = findDuplicates(languageFileData.words);
     const duplicatePercentage =

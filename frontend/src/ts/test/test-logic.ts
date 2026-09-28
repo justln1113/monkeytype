@@ -1,3 +1,4 @@
+import { applyBopomofoAppearance } from "../bopomofo/appearance";
 import Ape from "../ape";
 import * as TestUI from "./test-ui";
 import * as Strings from "../utils/strings";
@@ -95,7 +96,10 @@ import { showLoaderBar, hideLoaderBar } from "../states/loader-bar";
 import * as TestInitFailed from "../elements/test-init-failed";
 import { canQuickRestart } from "../utils/quick-restart";
 import { animate } from "animejs";
-import { setInputElementValue } from "../input/input-element";
+import {
+  setBopomofoCapture,
+  setInputElementValue,
+} from "../input/input-element";
 import { debounce } from "throttle-debounce";
 import { qs } from "../utils/dom";
 import { setAccountButtonSpinner } from "../states/header";
@@ -111,6 +115,8 @@ import {
 import {
   getKeypressDurations,
   getChars,
+  getHanziCounts,
+  hanziPerMinute,
   getBurstHistory,
   getLastKeypressToEndMs,
   getStartToFirstKeypressMs,
@@ -554,6 +560,8 @@ async function init(): Promise<boolean> {
 
   Funbox.toggleScript(TestWords.words.getCurrent()?.text ?? "");
   TestUI.setJoiningClass(allJoiningScript ?? language.joiningScript ?? false);
+  applyBopomofoAppearance(language.bopomofo === true);
+  setBopomofoCapture(language.bopomofo === true);
 
   const isLanguageRTL = allRightToLeft ?? language.rightToLeft ?? false;
   setIsLanguageRightToLeft(isLanguageRTL);
@@ -759,12 +767,22 @@ function buildCompletedEvent(
     err: getErrorCountHistory(eventLog),
   };
 
+  let wpm = calculateWpm(chars.correctWord, duration);
+  let rawWpm = calculateWpm(
+    chars.allCorrect + chars.incorrect + chars.extra,
+    duration,
+  );
+  if (eventLog.context.bopomofo === true) {
+    // speed in hanzi per minute; accuracy and char stats stay per keystroke
+    const hanzi = getHanziCounts(eventLog);
+    wpm = hanziPerMinute(hanzi.correct, duration);
+    rawWpm = hanziPerMinute(hanzi.committed, duration);
+  }
+
   const currentQuote = getCurrentQuote();
   const completedEvent: Omit<CompletedEvent, "hash" | "uid"> = {
-    wpm: Numbers.roundTo2(calculateWpm(chars.correctWord, duration)),
-    rawWpm: Numbers.roundTo2(
-      calculateWpm(chars.allCorrect + chars.incorrect + chars.extra, duration),
-    ),
+    wpm: Numbers.roundTo2(wpm),
+    rawWpm: Numbers.roundTo2(rawWpm),
     charStats: [chars.correctWord, chars.incorrect, chars.extra, chars.missed],
     charTotal: chars.allCorrect + chars.incorrect + chars.extra,
     acc: Numbers.roundTo2(getAccuracy(eventLog).percentage),

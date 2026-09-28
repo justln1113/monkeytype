@@ -3,6 +3,7 @@ import * as ConfigSchemas from "@monkeytype/schemas/configs";
 import { roundTo1 } from "@monkeytype/util/numbers";
 import { JSXElement } from "solid-js";
 
+import { quoteKeepsPunctuationToggle } from "../bopomofo/mode";
 import * as CustomThemes from "../collections/custom-themes";
 import { getDefaultConfig } from "../constants/default-config";
 import { isAuthenticated } from "../states/core";
@@ -146,7 +147,10 @@ export const configMetadata: ConfigMetadataObject = {
     changeRequiresRestart: true,
     group: "test",
     overrideValue: ({ value, currentConfig }) => {
-      if (currentConfig.mode === "quote") {
+      if (
+        currentConfig.mode === "quote" &&
+        !quoteKeepsPunctuationToggle(currentConfig.language)
+      ) {
         return false;
       }
       return value;
@@ -218,7 +222,13 @@ export const configMetadata: ConfigMetadataObject = {
       },
     },
     group: "test",
-    overrideConfig: ({ value }) => {
+    overrideConfig: ({ value, currentConfig }) => {
+      if (
+        value === "quote" &&
+        quoteKeepsPunctuationToggle(currentConfig.language)
+      ) {
+        return { numbers: false };
+      }
       if (value === "custom" || value === "quote" || value === "zen") {
         return {
           numbers: false,
@@ -255,6 +265,15 @@ export const configMetadata: ConfigMetadataObject = {
     changeRequiresRestart: true,
     group: "test",
     description: "Change in which language you want to type.",
+    overrideConfig: ({ value, currentConfig }) => {
+      if (
+        currentConfig.mode === "quote" &&
+        !quoteKeepsPunctuationToggle(value)
+      ) {
+        return { punctuation: false };
+      }
+      return {};
+    },
   },
   burstHeatmap: {
     key: "burstHeatmap",
@@ -864,6 +883,15 @@ export const configMetadata: ConfigMetadataObject = {
     changeRequiresRestart: false,
     group: "appearance",
     description: "Change how typed words are shown.",
+  },
+  bopomofoFont: {
+    key: "bopomofoFont",
+    fa: { icon: "fa-font" },
+    displayString: "bopomofo font",
+    changeRequiresRestart: false,
+    group: "appearance",
+    description:
+      "Typeface for hanzi and their bopomofo in bopomofo languages: sans (Noto Sans TC) or serif (Noto Serif TC).",
   },
   tapeMode: {
     key: "tapeMode",

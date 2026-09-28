@@ -155,6 +155,7 @@ export function SettingsPage(): JSXElement {
             <SearchableAutoSetting key="timerOpacity" />
             <SearchableAutoSetting key="highlightMode" wide />
             <SearchableAutoSetting key="typedEffect" />
+            <SearchableAutoSetting key="bopomofoFont" />
             <SearchableAutoSetting key="tapeMode" />
             <SearchableAutoSetting key="tapeMargin" />
             <SearchableAutoSetting key="smoothLineScroll" />

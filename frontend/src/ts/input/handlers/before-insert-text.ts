@@ -1,7 +1,6 @@
 import { Config } from "../../config/store";
 import * as TestUI from "../../test/test-ui";
 import * as TestWords from "../../test/test-words";
-import { isFunboxActiveWithProperty } from "../../test/funbox/list";
 import { getInputElementValue } from "../input-element";
 import { isAwaitingNextWord } from "../state";
 import * as SlowTimer from "../../legacy-states/slow-timer";
@@ -12,7 +11,14 @@ import {
   wordsHaveNewline,
 } from "../../states/test";
 import { shouldGoToNextWord } from "../helpers/validation";
-import { getCommitCharacterType, normalizeData } from "../helpers/util";
+import {
+  currentBopomofoHanzi,
+  getCommitCharacterType,
+  isNoSeparatorMode,
+  normalizeData,
+} from "../helpers/util";
+import { isBopomofoActive } from "../../bopomofo/mode";
+import { isBopomofoInputBlocked } from "../../bopomofo/input";
 import { getCurrentInput } from "../../test/events/data";
 import { isSpace } from "../../utils/strings";
 
@@ -39,8 +45,8 @@ export function onBeforeInsertText(data: string): boolean {
     return true;
   }
 
-  //prevent space in nospace funbox
-  if (isSpace(data) && isFunboxActiveWithProperty("nospace")) {
+  //prevent space when words have no separator
+  if (isSpace(data) && isNoSeparatorMode()) {
     return true;
   }
 
@@ -51,7 +57,23 @@ export function onBeforeInsertText(data: string): boolean {
 
   //normalize visually-equivalent chars (e.g. IME U+3000 space) to the target
   //char, matching onInsertText, so commit classification is consistent
-  data = normalizeData(data, inputValue, currentWordTextWithCommit);
+  data = normalizeData(
+    data,
+    inputValue,
+    currentWordTextWithCommit,
+    currentBopomofoHanzi(),
+  );
+
+  if (
+    isBopomofoActive() &&
+    isBopomofoInputBlocked({
+      data,
+      inputValue,
+      targetWord: currentWordTextWithCommit,
+    })
+  ) {
+    return true;
+  }
 
   const commitCharacterType = getCommitCharacterType({
     data,

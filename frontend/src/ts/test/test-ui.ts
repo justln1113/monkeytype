@@ -1,3 +1,4 @@
+import { bopomofoWordClasses, renderBopomofoWord } from "../bopomofo/render";
 import {
   showNoticeNotification,
   showErrorNotification,
@@ -389,7 +390,18 @@ async function updateHintsPosition(): Promise<void> {
   }
 }
 
+function bopomofoRenderOptions(): { showTypedTypos: boolean } {
+  return {
+    showTypedTypos:
+      Config.indicateTypos === "replace" || Config.indicateTypos === "both",
+  };
+}
+
 function buildWordHTML(word: string, wordIndex: number): string {
+  const bopomofoUnit = TestWords.words.get(wordIndex)?.bopomofo;
+  if (bopomofoUnit !== undefined) {
+    return `<div class='word ${bopomofoWordClasses(bopomofoUnit)}' data-wordindex='${wordIndex}'>${renderBopomofoWord(bopomofoUnit, "", bopomofoRenderOptions())}</div>`;
+  }
   let newlineafter = false;
   let retval = `<div class='word' data-wordindex='${wordIndex}'>`;
 
@@ -767,6 +779,13 @@ export async function updateWordLetters({
       let ret = "";
       const wordAtIndex = getWordElement(wordIndex);
       if (!wordAtIndex) return;
+      const bopomofoUnit = TestWords.words.get(wordIndex)?.bopomofo;
+      if (bopomofoUnit !== undefined) {
+        wordAtIndex.setHtml(
+          renderBopomofoWord(bopomofoUnit, input, bopomofoRenderOptions()),
+        );
+        return;
+      }
       const hintIndices: number[][] = [];
 
       let newlineafter = false;
@@ -1387,7 +1406,17 @@ async function loadWordsHistory(): Promise<boolean> {
 
     wordEl.setAttribute("input", inputAttribute.replace(/ /g, "_"));
 
-    wordEl.innerHTML = buildWordLettersHTML(input, corrected, target);
+    const bopomofoUnit = TestWords.words.get(i)?.bopomofo;
+    if (bopomofoUnit !== undefined) {
+      wordEl.classList.add(...bopomofoWordClasses(bopomofoUnit).split(" "));
+      wordEl.innerHTML = renderBopomofoWord(
+        bopomofoUnit,
+        input ?? "",
+        bopomofoRenderOptions(),
+      );
+    } else {
+      wordEl.innerHTML = buildWordLettersHTML(input, corrected, target);
+    }
 
     wordEl.addEventListener("mouseenter", (e) => {
       // if (noHover) return;
@@ -2014,7 +2043,7 @@ addEventListener("resize", () => {
   ResultWordHighlight.destroy();
 });
 
-qs("#wordsInput")?.on("focus", (e) => {
+qsa("#wordsInput, #wordsInputBopomofo").on("focus", (e) => {
   if (!isInputElementFocused()) return;
   if (!getResultVisible() && Config.showOutOfFocusWarning) {
     setTestFocusState("focused");
@@ -2022,7 +2051,7 @@ qs("#wordsInput")?.on("focus", (e) => {
   Caret.show(true);
 });
 
-qs("#wordsInput")?.on("focusout", () => {
+qsa("#wordsInput, #wordsInputBopomofo").on("focusout", () => {
   if (!isInputElementFocused()) {
     setTestFocusState("unfocused");
   }

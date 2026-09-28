@@ -1,13 +1,17 @@
 import { isFunboxActiveWithProperty } from "../../test/funbox/list";
 import { areCharactersVisuallyEqual, isSpace } from "../../utils/strings";
 import { Config } from "../../config/store";
+import * as TestWords from "../../test/test-words";
+import { isBopomofoActive } from "../../bopomofo/mode";
+import { isPunctTarget, isSandhiTone, isToneMark } from "../../bopomofo/parse";
 
 /**
  * What kind of commit a character triggers, or false if it does not commit.
  * - "separator": a space or newline that ends the current word
  * - "nospace": the final letter of a word in a nospace funbox
+ * - "tone": a bopomofo tone mark ending a syllable, or a punctuation unit's key
  */
-export type CommitCharacterType = "separator" | "nospace";
+export type CommitCharacterType = "separator" | "nospace" | "tone";
 
 export function getCommitCharacterType(options: {
   data: string;
@@ -24,6 +28,18 @@ export function getCommitCharacterType(options: {
     return "separator";
   }
 
+  if (isBopomofoActive()) {
+    if (isToneMark(data)) return "tone";
+    // punctuation units have no tone: their single key commits them
+    if (
+      isPunctTarget(targetWord) &&
+      (inputValue + data).length >= targetWord.length
+    ) {
+      return "tone";
+    }
+    return false;
+  }
+
   const nospace = isFunboxActiveWithProperty("nospace");
 
   if (nospace && (inputValue + data).length === targetWord.length) {
@@ -31,6 +47,11 @@ export function getCommitCharacterType(options: {
   }
 
   return false;
+}
+
+/** Bopomofo shares the nospace funbox's separator-free paths. */
+export function isNoSeparatorMode(): boolean {
+  return isFunboxActiveWithProperty("nospace") || isBopomofoActive();
 }
 
 /**
@@ -42,8 +63,16 @@ export function normalizeData(
   data: string,
   inputValue: string,
   targetWord: string,
+  bopomofoHanzi?: string,
 ): string {
   const targetChar = targetWord[inputValue.length];
+  if (
+    bopomofoHanzi !== undefined &&
+    targetChar !== undefined &&
+    isSandhiTone(bopomofoHanzi, data, targetChar)
+  ) {
+    return targetChar;
+  }
   if (
     targetChar !== undefined &&
     areCharactersVisuallyEqual(data, targetChar, Config.language)
@@ -54,4 +83,10 @@ export function normalizeData(
     return " ";
   }
   return data;
+}
+
+/** The hanzi being typed in bopomofo mode, for tone sandhi. */
+export function currentBopomofoHanzi(): string | undefined {
+  const unit = TestWords.words.getCurrent()?.bopomofo;
+  return unit?.kind === "hanzi" ? unit.hanzi : undefined;
 }

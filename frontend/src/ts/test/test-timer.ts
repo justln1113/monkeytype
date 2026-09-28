@@ -27,7 +27,7 @@ import {
   getLiveCachedTestSeconds,
   getLiveCachedTimerStartMs,
 } from "./events/live-cache";
-import { getChars } from "./events/stats";
+import { getChars, getHanziCounts, hanziPerMinute } from "./events/stats";
 import { calculateWpm } from "../utils/numbers";
 import {
   getActiveWordIndex,
@@ -298,6 +298,12 @@ function timerStep(now: number, catchingUp: boolean): void {
         ),
       ),
     };
+    if (eventLog.context.bopomofo === true) {
+      const hanzi = getHanziCounts(eventLog);
+      const seconds = currentTestDurationMs / 1000;
+      wpmAndRaw.wpm = Math.round(hanziPerMinute(hanzi.correct, seconds));
+      wpmAndRaw.raw = Math.round(hanziPerMinute(hanzi.committed, seconds));
+    }
 
     setCurrentLiveStats({
       wpm: wpmAndRaw.wpm,
