@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  decodeUnit,
+  encodeUnit,
   parseAnnotatedText,
   validateAnnotatedToken,
 } from "../../src/ts/bopomofo/parse";
@@ -80,5 +82,22 @@ describe("parseAnnotatedText", () => {
         groupEnd: true,
       },
     ]);
+  });
+});
+
+describe("encodeUnit / decodeUnit", () => {
+  it("round-trips units through a space-free string for the word pipeline", () => {
+    const units = parseAnnotatedText("「 我們|ㄨㄛˇㄇㄣ˙ ，」 好|ㄏㄠˇ", {
+      typePunctuation: false,
+    }).concat(parseAnnotatedText("好|ㄏㄠˇ ，", { typePunctuation: true }));
+    for (const unit of units) {
+      const encoded = encodeUnit(unit);
+      expect(encoded).not.toMatch(/\s/);
+      expect(decodeUnit(encoded)).toEqual(unit);
+    }
+  });
+
+  it("returns null for ordinary words", () => {
+    expect(decodeUnit("hello")).toBeNull();
   });
 });

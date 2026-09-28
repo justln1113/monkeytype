@@ -111,3 +111,50 @@ export function parseAnnotatedText(
   }
   return units;
 }
+
+// The word pipeline (generator → Words) passes words around as space-free
+// strings, so units are encoded with control-character separators.
+const SEP = "\u0001";
+const HANZI_TAG = "\u0002H";
+const PUNCT_TAG = "\u0002P";
+
+export function encodeUnit(unit: BopomofoUnit): string {
+  if (unit.kind === "punct") {
+    return [PUNCT_TAG, unit.char, unit.groupEnd ? "1" : "0"].join(SEP);
+  }
+  return [
+    HANZI_TAG,
+    unit.hanzi,
+    unit.reading,
+    unit.punctBefore,
+    unit.punctAfter,
+    unit.groupEnd ? "1" : "0",
+  ].join(SEP);
+}
+
+export function decodeUnit(encoded: string): BopomofoUnit | null {
+  const parts = encoded.split(SEP);
+  if (parts[0] === PUNCT_TAG && parts.length === 3) {
+    return {
+      kind: "punct",
+      char: parts[1] as string,
+      groupEnd: parts[2] === "1",
+    };
+  }
+  if (parts[0] === HANZI_TAG && parts.length === 6) {
+    return {
+      kind: "hanzi",
+      hanzi: parts[1] as string,
+      reading: parts[2] as string,
+      punctBefore: parts[3] as string,
+      punctAfter: parts[4] as string,
+      groupEnd: parts[5] === "1",
+    };
+  }
+  return null;
+}
+
+/** The characters the user types for a unit. */
+export function unitTarget(unit: BopomofoUnit): string {
+  return unit.kind === "hanzi" ? unit.reading : unit.char;
+}
