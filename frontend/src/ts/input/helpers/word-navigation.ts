@@ -8,15 +8,13 @@ import {
 } from "../../states/test";
 import * as TestLogic from "../../test/test-logic";
 import * as TestWords from "../../test/test-words";
-import {
-  getActiveFunboxesWithFunction,
-  isFunboxActiveWithProperty,
-} from "../../test/funbox/list";
+import { getActiveFunboxesWithFunction } from "../../test/funbox/list";
 import * as Funbox from "../../test/funbox/funbox";
 import { showLoaderBar, hideLoaderBar } from "../../states/loader-bar";
 import { setInputElementValue } from "../input-element";
 import { setAwaitingNextWord } from "../state";
 import { DeleteInputType } from "./input-type";
+import { isNoSeparatorMode } from "./util";
 import { getWordBurst } from "../../test/events/stats";
 import { buildEventLog, getInputForWord } from "../../test/events/data";
 
@@ -96,7 +94,7 @@ export function goToPreviousWord(inputType: DeleteInputType): void {
   const word = TestWords.words.get(getActiveWordIndex())?.text;
   if (word !== undefined) Funbox.toggleScript(word);
 
-  const nospaceEnabled = isFunboxActiveWithProperty("nospace");
+  const nospaceEnabled = isNoSeparatorMode();
 
   if (inputType === "deleteWordBackward") {
     setInputElementValue("");

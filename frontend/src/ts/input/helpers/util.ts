@@ -1,13 +1,16 @@
 import { isFunboxActiveWithProperty } from "../../test/funbox/list";
 import { areCharactersVisuallyEqual, isSpace } from "../../utils/strings";
 import { Config } from "../../config/store";
+import { isBopomofoActive } from "../../bopomofo/mode";
+import { isToneMark } from "../../bopomofo/parse";
 
 /**
  * What kind of commit a character triggers, or false if it does not commit.
  * - "separator": a space or newline that ends the current word
  * - "nospace": the final letter of a word in a nospace funbox
+ * - "tone": a bopomofo tone mark ending a syllable, or a punctuation unit's key
  */
-export type CommitCharacterType = "separator" | "nospace";
+export type CommitCharacterType = "separator" | "nospace" | "tone";
 
 export function getCommitCharacterType(options: {
   data: string;
@@ -24,6 +27,16 @@ export function getCommitCharacterType(options: {
     return "separator";
   }
 
+  if (isBopomofoActive()) {
+    if (isToneMark(data)) return "tone";
+    // punctuation units have no tone: their single key commits them
+    const isPunctUnit = !isToneMark(targetWord.slice(-1));
+    if (isPunctUnit && (inputValue + data).length >= targetWord.length) {
+      return "tone";
+    }
+    return false;
+  }
+
   const nospace = isFunboxActiveWithProperty("nospace");
 
   if (nospace && (inputValue + data).length === targetWord.length) {
@@ -31,6 +44,11 @@ export function getCommitCharacterType(options: {
   }
 
   return false;
+}
+
+/** Words follow each other without a separator key. */
+export function isNoSeparatorMode(): boolean {
+  return isFunboxActiveWithProperty("nospace") || isBopomofoActive();
 }
 
 /**

@@ -22,6 +22,10 @@ import { __nonReactive, setBailedOut, wordsHaveTab } from "../../states/test";
 import { getCustomTextIndicator } from "../../states/core";
 import { logTestEvent } from "../../test/events/data";
 import { getTestEventCode } from "../../test/events/helpers";
+import { isBopomofoActive } from "../../bopomofo/mode";
+import { bopomofoKeyAction } from "../../bopomofo/input";
+import { createKeyReader } from "../../bopomofo/keymap";
+import { emulateDelete } from "./delete";
 
 export async function handleTab(e: KeyboardEvent, now: number): Promise<void> {
   if (wordsHaveTab() && !e.shiftKey) {
@@ -114,6 +118,43 @@ async function handleFunboxes(
   return false;
 }
 
+const readBopomofoKey = createKeyReader();
+let lastImeNotice = 0;
+
+/**
+ * Bopomofo mode maps physical keys itself. Runs synchronously so
+ * preventDefault lands before the browser inserts anything.
+ * @returns whether the key was handled
+ */
+function handleBopomofoKeydown(event: KeyboardEvent, now: number): boolean {
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    const wordBackward = event.ctrlKey || event.altKey || event.metaKey;
+    emulateDelete(
+      wordBackward ? "deleteWordBackward" : "deleteContentBackward",
+      now,
+    );
+    return true;
+  }
+
+  const action = bopomofoKeyAction(event, readBopomofoKey);
+  if (action === null) return false;
+  event.preventDefault();
+
+  if (action.type === "ime") {
+    if (Date.now() - lastImeNotice > 3000) {
+      lastImeNotice = Date.now();
+      showNoticeNotification(
+        "Switch your input method to English mode to type bopomofo",
+        { important: true },
+      );
+    }
+  } else if (action.type === "insert") {
+    void emulateInsertText({ data: action.data, now });
+  }
+  return true;
+}
+
 export async function onKeydown(event: KeyboardEvent): Promise<void> {
   if (event.repeat) {
     // just ignore all repeats
@@ -129,6 +170,8 @@ export async function onKeydown(event: KeyboardEvent): Promise<void> {
     alt: event.altKey ? true : undefined,
     meta: event.metaKey ? true : undefined,
   });
+
+  if (isBopomofoActive() && handleBopomofoKeydown(event, now)) return;
 
   // allow arrows in arrows funbox
   const arrowsActive = Config.funbox.includes("arrows");

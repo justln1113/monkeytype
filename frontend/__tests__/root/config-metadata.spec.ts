@@ -77,6 +77,11 @@ describe("ConfigMeta", () => {
           given: { mode: "quote" },
           expected: { punctuation: false },
         },
+        {
+          value: true,
+          given: { mode: "quote", language: "bopomofo" },
+          expected: { punctuation: true },
+        },
       ],
       numbers: [
         { value: true, expected: { numbers: true } },
@@ -211,12 +216,29 @@ describe("ConfigMeta", () => {
           expected: { numbers: false, punctuation: false },
         },
         {
+          value: "quote",
+          given: { numbers: true, punctuation: true, language: "bopomofo" },
+          expected: { numbers: false, punctuation: true },
+        },
+        {
           value: "zen",
           given: { numbers: true, punctuation: true },
           expected: { numbers: false, punctuation: false },
         },
       ],
       numbers: [{ value: false, given: { mode: "quote" } }],
+      language: [
+        {
+          value: "english",
+          given: { mode: "quote", punctuation: true },
+          expected: { punctuation: false },
+        },
+        {
+          value: "bopomofo",
+          given: { mode: "quote", punctuation: true },
+          expected: { punctuation: true },
+        },
+      ],
       freedomMode: [
         {
           value: false,

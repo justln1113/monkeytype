@@ -2043,7 +2043,7 @@ addEventListener("resize", () => {
   ResultWordHighlight.destroy();
 });
 
-qs("#wordsInput")?.on("focus", (e) => {
+qsa("#wordsInput, #wordsInputBopomofo").on("focus", (e) => {
   if (!isInputElementFocused()) return;
   if (!getResultVisible() && Config.showOutOfFocusWarning) {
     setTestFocusState("focused");
@@ -2051,7 +2051,7 @@ qs("#wordsInput")?.on("focus", (e) => {
   Caret.show(true);
 });
 
-qs("#wordsInput")?.on("focusout", () => {
+qsa("#wordsInput, #wordsInputBopomofo").on("focusout", () => {
   if (!isInputElementFocused()) {
     setTestFocusState("unfocused");
   }

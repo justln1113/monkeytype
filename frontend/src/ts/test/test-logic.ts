@@ -96,7 +96,10 @@ import { showLoaderBar, hideLoaderBar } from "../states/loader-bar";
 import * as TestInitFailed from "../elements/test-init-failed";
 import { canQuickRestart } from "../utils/quick-restart";
 import { animate } from "animejs";
-import { setInputElementValue } from "../input/input-element";
+import {
+  setBopomofoCapture,
+  setInputElementValue,
+} from "../input/input-element";
 import { debounce } from "throttle-debounce";
 import { qs } from "../utils/dom";
 import { setAccountButtonSpinner } from "../states/header";
@@ -556,6 +559,7 @@ async function init(): Promise<boolean> {
   Funbox.toggleScript(TestWords.words.getCurrent()?.text ?? "");
   TestUI.setJoiningClass(allJoiningScript ?? language.joiningScript ?? false);
   applyBopomofoAppearance(language.bopomofo === true);
+  setBopomofoCapture(language.bopomofo === true);
 
   const isLanguageRTL = allRightToLeft ?? language.rightToLeft ?? false;
   setIsLanguageRightToLeft(isLanguageRTL);

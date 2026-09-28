@@ -1,9 +1,15 @@
 import {
   getInputElement,
+  getKeyCaptureElement,
   moveInputElementCaretToTheEnd,
 } from "../input-element";
 
 const inputEl = getInputElement();
+
+// the capture field only relays keys; whatever lands in it is discarded
+getKeyCaptureElement()?.addEventListener("input", (event) => {
+  (event.target as HTMLInputElement).value = "";
+});
 
 inputEl.addEventListener("focus", () => {
   moveInputElementCaretToTheEnd();

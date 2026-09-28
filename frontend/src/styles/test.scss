@@ -565,7 +565,8 @@
   border-bottom: 2px solid var(--colorful-error-color);
 }
 
-#wordsInput {
+#wordsInput,
+#wordsInputBopomofo {
   width: 0;
   font-size: 1em;
   height: 1em;

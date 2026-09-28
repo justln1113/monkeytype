@@ -40,6 +40,17 @@
         list="autocompleteOff"
         spellcheck="false"
       ></textarea>
+      <!-- bopomofo mode: IMEs leave password fields alone, so keys arrive raw -->
+      <input
+        id="wordsInputBopomofo"
+        type="password"
+        autocomplete="new-password"
+        tabindex="-1"
+        data-bwignore
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+      />
       <mount data-component="outoffocuswarning" class="contents"></mount>
       <div id="paceCaret" class="full-width default hidden"></div>
       <div id="caret" class="full-width default"></div>

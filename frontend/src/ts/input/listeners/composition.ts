@@ -4,6 +4,7 @@ import * as TestLogic from "../../test/test-logic";
 import { setLastInsertCompositionTextData } from "../state";
 import { onInsertText } from "../handlers/insert-text";
 import { logTestEvent } from "../../test/events/data";
+import { isBopomofoActive } from "../../bopomofo/mode";
 import {
   isTestRestarting,
   getActiveWordIndex,
@@ -23,6 +24,8 @@ inputEl.addEventListener("compositionstart", (event) => {
   const now = performance.now();
 
   if (isTestRestarting() || isResultCalculating()) return;
+  // bopomofo reads physical keys; an IME composing here must not start a test
+  if (isBopomofoActive()) return;
   CompositionState.setComposing(true);
   CompositionState.setData("");
   setLastInsertCompositionTextData("");
